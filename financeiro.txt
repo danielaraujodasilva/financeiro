@@ -15,7 +15,7 @@ Status atual
 - Correção de URLs para operar em /financeiro concluída.
 - Fase 1 do banco de dados concluída.
 - Fase 2 do cartão de crédito concluída.
-- Fase 3 iniciada com o dashboard financeiro MVP.
+- Fase 3 concluída com dashboard e telas principais.
 
 O que já existe
 - Autenticação básica.
@@ -50,18 +50,18 @@ Fase 2 - Cartão de crédito
 
 Fase 3 - Telas principais
 - [x] Dashboard financeiro completo.
-- [ ] Tela de lançamentos.
-- [ ] Tela de recorrências.
-- [ ] Tela de centros.
-- [ ] Tela de categorias.
-- [ ] Tela de contas.
-- [ ] Tela de cartões.
-- [ ] Tela de orçamentos.
-- [ ] Tela de metas.
-- [ ] Tela de fluxo de caixa.
-- [ ] Tela de calendário financeiro.
-- [ ] Relatórios.
-- [ ] DRE simples do estúdio.
+- [x] Tela de lançamentos.
+- [x] Tela de recorrências.
+- [x] Tela de centros.
+- [x] Tela de categorias.
+- [x] Tela de contas.
+- [x] Tela de cartões.
+- [x] Tela de orçamentos.
+- [x] Tela de metas.
+- [x] Tela de fluxo de caixa.
+- [x] Tela de calendário financeiro.
+- [x] Relatórios.
+- [x] DRE simples do estúdio.
 
 Fase 4 - Recursos inteligentes
 - [ ] Tela de insights.
@@ -87,11 +87,11 @@ Fase 7 - Segurança
 - [ ] Preparar trilha de auditoria nas alterações importantes.
 
 Prioridade imediata
-1. Tela de lançamentos.
-2. Tela de recorrências.
-3. Tela de centros.
-4. Tela de categorias.
-5. Tela de contas.
+1. Filtros e consultas inteligentes.
+2. Insights automáticos.
+3. Simulador de decisão.
+4. Melhoria de edição/remoção nas telas.
+5. Evoluir para Fase 4.
 
 Notas
 - Não implementar Open Finance agora.
