@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $userId = $auth->register(trim($_POST['name'] ?? ''), trim($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''));
         $_SESSION['user_id'] = $userId;
-        header('Location: /dashboard.php');
+        header('Location: ' . base_path('dashboard.php'));
         exit;
     } catch (Throwable $e) {
         $error = $e->getMessage();
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Criar conta - Financeiro</title>
-<link rel="stylesheet" href="/assets/ui.css">
+<link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
 <body>
 <div class="wrap">
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </label>
       <button class="btn btn-primary" type="submit">Criar conta</button>
     </form>
-    <p class="note">Já tem conta? <a href="/login.php">Entrar</a></p>
+    <p class="note">Já tem conta? <a href="<?= e(base_path('login.php')) ?>">Entrar</a></p>
   </div>
 </div>
 </body>

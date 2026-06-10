@@ -272,7 +272,7 @@ final class Auth
     {
         $id = $this->userId();
         if (!$id) {
-            header('Location: /login.php');
+            header('Location: ' . base_path('login.php'));
             exit;
         }
         return $id;

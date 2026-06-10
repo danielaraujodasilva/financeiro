@@ -4,7 +4,7 @@ require __DIR__ . '/bootstrap.php';
 $error = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($auth->login(trim($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''))) {
-        header('Location: /dashboard.php');
+        header('Location: ' . base_path('dashboard.php'));
         exit;
     }
     $error = 'Email ou senha inválidos.';
@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Login - Financeiro</title>
-<link rel="stylesheet" href="/assets/ui.css">
+<link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
 <body>
 <div class="wrap">
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </label>
       <button class="btn btn-primary" type="submit">Entrar</button>
     </form>
-    <p class="note">Ainda não tem conta? <a href="/register.php">Criar agora</a></p>
+    <p class="note">Ainda não tem conta? <a href="<?= e(base_path('register.php')) ?>">Criar agora</a></p>
   </div>
 </div>
 </body>

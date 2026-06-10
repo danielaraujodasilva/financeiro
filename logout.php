@@ -2,5 +2,5 @@
 require __DIR__ . '/bootstrap.php';
 
 session_destroy();
-header('Location: /login.php');
+header('Location: ' . base_path('login.php'));
 exit;

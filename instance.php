@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($instance['name']) ?> - Financeiro</title>
-<link rel="stylesheet" href="/assets/ui.css">
+<link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
 <body>
 <div class="wrap">
@@ -73,8 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     </div>
     <div class="actions">
-      <a class="btn btn-secondary" href="/dashboard.php">Voltar</a>
-      <a class="btn btn-primary" href="/instance-create.php">Nova instância</a>
+      <a class="btn btn-secondary" href="<?= e(base_path('dashboard.php')) ?>">Voltar</a>
+      <a class="btn btn-primary" href="<?= e(base_path('instance-create.php')) ?>">Nova instância</a>
     </div>
   </div>
 

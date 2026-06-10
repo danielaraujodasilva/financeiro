@@ -11,7 +11,7 @@ $instances = $auth->instancesForUser($userId);
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard - Financeiro</title>
-<link rel="stylesheet" href="/assets/ui.css">
+<link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
 <body>
 <div class="wrap">
@@ -24,8 +24,8 @@ $instances = $auth->instancesForUser($userId);
       </div>
     </div>
     <div class="actions">
-      <a class="btn btn-secondary" href="/logout.php">Sair</a>
-      <a class="btn btn-primary" href="/instance-create.php">Nova instância</a>
+      <a class="btn btn-secondary" href="<?= e(base_path('logout.php')) ?>">Sair</a>
+      <a class="btn btn-primary" href="<?= e(base_path('instance-create.php')) ?>">Nova instância</a>
     </div>
   </div>
 
@@ -49,7 +49,7 @@ $instances = $auth->instancesForUser($userId);
               <strong><?= e($instance['name']) ?></strong>
               <span class="muted">Função: <?= e($instance['role']) ?> · Slug: <?= e($instance['slug']) ?></span>
             </div>
-            <a class="btn btn-primary" href="/instance.php?id=<?= (int) $instance['id'] ?>">Abrir</a>
+            <a class="btn btn-primary" href="<?= e(base_path('instance.php?id=' . (int) $instance['id'])) ?>">Abrir</a>
           </div>
         <?php endforeach; ?>
         <?php if (!$instances): ?>
@@ -71,7 +71,7 @@ $instances = $auth->instancesForUser($userId);
                 <strong><?= e($invite['instance_name']) ?></strong>
                 <span class="muted">Convite em aberto</span>
               </div>
-              <a class="btn btn-good" href="/accept-invite.php?token=<?= e($invite['token']) ?>">Aceitar</a>
+              <a class="btn btn-good" href="<?= e(base_path('accept-invite.php?token=' . $invite['token'])) ?>">Aceitar</a>
             </div>
           <?php endforeach; ?>
         </div>

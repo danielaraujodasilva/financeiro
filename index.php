@@ -2,9 +2,9 @@
 require __DIR__ . '/bootstrap.php';
 
 if ($auth->userId()) {
-    header('Location: /dashboard.php');
+    header('Location: ' . base_path('dashboard.php'));
     exit;
 }
 
-header('Location: /login.php');
+header('Location: ' . base_path('login.php'));
 exit;

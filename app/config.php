@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 return [
     'app_name' => 'Financeiro',
+    'base_path' => getenv('FINANCEIRO_BASE_PATH') ?: '/financeiro',
     'db_driver' => getenv('FINANCEIRO_DB_DRIVER') ?: 'sqlite',
     'db_path' => getenv('FINANCEIRO_DB_PATH') ?: __DIR__ . '/../data/financeiro.sqlite',
     'db_host' => getenv('FINANCEIRO_DB_HOST') ?: '127.0.0.1',

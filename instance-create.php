@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$instanceId, $userId]);
 
             $pdo->commit();
-            header('Location: /dashboard.php');
+            header('Location: ' . base_path('dashboard.php'));
             exit;
         } catch (Throwable $e) {
             $pdo->rollBack();
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nova instância - Financeiro</title>
-<link rel="stylesheet" href="/assets/ui.css">
+<link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
 <body>
 <div class="wrap">

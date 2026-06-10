@@ -24,10 +24,10 @@ try {
 <body>
 <?php if ($message): ?>
   <p><?= e($message) ?></p>
-  <p><a href="/dashboard.php">Ir para o dashboard</a></p>
+  <p><a href="<?= e(base_path('dashboard.php')) ?>">Ir para o dashboard</a></p>
 <?php else: ?>
   <p><?= e($error ?? 'Falha ao processar convite.') ?></p>
-  <p><a href="/dashboard.php">Voltar</a></p>
+  <p><a href="<?= e(base_path('dashboard.php')) ?>">Voltar</a></p>
 <?php endif; ?>
 </body>
 </html>
