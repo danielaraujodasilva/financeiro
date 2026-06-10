@@ -196,18 +196,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dueDay = max(1, (int) ($card['due_day'] ?? 1));
 
                 $insStmt = $pdo->prepare('INSERT INTO credit_card_installments (purchase_id, installment_number, due_date, amount, status, transaction_id, created_at, updated_at) VALUES (?, ?, ?, ?, "planned", NULL, ?, ?)');
+                $billUpsert = $pdo->prepare('
+                    INSERT INTO credit_card_bills (instance_id, card_id, reference_month, reference_year, closing_date, due_date, total_amount, status, payment_transaction_id, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, "open", NULL, ?, ?)
+                    ON CONFLICT(card_id, reference_month, reference_year)
+                    DO UPDATE SET total_amount = total_amount + excluded.total_amount, updated_at = excluded.updated_at
+                ');
                 for ($i = 1; $i <= $installments; $i++) {
                     $due = new DateTime($purchaseDate);
                     $due->modify('first day of next month');
                     $due->modify('+' . ($i - 1) . ' month');
                     $due->setDate((int) $due->format('Y'), (int) $due->format('m'), min($dueDay, (int) $due->format('t')));
-                    $insStmt->execute([$purchaseId, $i, $due->format('Y-m-d'), $installmentAmount, dt_now(), dt_now()]);
+                    $dueDate = $due->format('Y-m-d');
+                    $insStmt->execute([$purchaseId, $i, $dueDate, $installmentAmount, dt_now(), dt_now()]);
+                    $billUpsert->execute([
+                        $instanceId,
+                        (int) post_value('purchase_card_id'),
+                        (int) $due->format('m'),
+                        (int) $due->format('Y'),
+                        $purchaseDate,
+                        $dueDate,
+                        $installmentAmount,
+                        dt_now(),
+                        dt_now()
+                    ]);
                 }
-
-                $billMonth = $purchaseMonth;
-                $billYear = $purchaseYear;
-                $billStmt = $pdo->prepare('INSERT OR IGNORE INTO credit_card_bills (instance_id, card_id, reference_month, reference_year, closing_date, due_date, total_amount, status, payment_transaction_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, "open", NULL, ?, ?)');
-                $billStmt->execute([$instanceId, (int) post_value('purchase_card_id'), $billMonth, $billYear, $purchaseDate, $purchaseDate, dt_now(), dt_now()]);
                 $message = 'Compra do cartão criada com parcelas.';
                 break;
         }
@@ -227,6 +240,36 @@ $rules = $pdo->query('SELECT * FROM financial_rules WHERE instance_id = ' . (int
 $cards = $pdo->query('SELECT * FROM credit_cards WHERE instance_id = ' . (int) $instanceId . ' ORDER BY id DESC')->fetchAll();
 $cardPurchases = $pdo->query('SELECT p.*, c.name AS card_name FROM credit_card_purchases p INNER JOIN credit_cards c ON c.id = p.card_id WHERE p.instance_id = ' . (int) $instanceId . ' ORDER BY p.purchase_date DESC, p.id DESC')->fetchAll();
 $cardBills = $pdo->query('SELECT b.*, c.name AS card_name FROM credit_card_bills b INNER JOIN credit_cards c ON c.id = b.card_id WHERE b.instance_id = ' . (int) $instanceId . ' ORDER BY b.reference_year DESC, b.reference_month DESC')->fetchAll();
+
+$cardStats = [];
+$cardStatsStmt = $pdo->prepare('
+    SELECT
+        c.id,
+        c.name,
+        c.credit_limit,
+        COALESCE((SELECT SUM(p.total_amount) FROM credit_card_purchases p WHERE p.card_id = c.id), 0) AS spent_total,
+        COALESCE((SELECT SUM(ci.amount) FROM credit_card_installments ci INNER JOIN credit_card_purchases p ON p.id = ci.purchase_id WHERE p.card_id = c.id AND ci.status IN ("planned", "pending")), 0) AS future_commitment,
+        COALESCE((SELECT SUM(ci.amount) FROM credit_card_installments ci INNER JOIN credit_card_purchases p ON p.id = ci.purchase_id WHERE p.card_id = c.id AND ci.status = "paid"), 0) AS paid_installments
+    FROM credit_cards c
+    WHERE c.instance_id = ?
+    ORDER BY c.id DESC
+');
+$cardStatsStmt->execute([$instanceId]);
+$cardStats = $cardStatsStmt->fetchAll();
+
+$cardInstallmentsStmt = $pdo->prepare('
+    SELECT
+        ci.*,
+        p.description AS purchase_description,
+        c.name AS card_name
+    FROM credit_card_installments ci
+    INNER JOIN credit_card_purchases p ON p.id = ci.purchase_id
+    INNER JOIN credit_cards c ON c.id = p.card_id
+    WHERE c.instance_id = ?
+    ORDER BY ci.due_date ASC, ci.installment_number ASC
+');
+$cardInstallmentsStmt->execute([$instanceId]);
+$cardInstallments = $cardInstallmentsStmt->fetchAll();
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -617,6 +660,46 @@ $cardBills = $pdo->query('SELECT b.*, c.name AS card_name FROM credit_card_bills
         </div>
       <?php endforeach; ?>
       <?php if (!$cardBills): ?><p class="muted">Nenhuma fatura gerada ainda.</p><?php endif; ?>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card enter">
+      <h2>Limite e comprometimento</h2>
+      <div class="list">
+        <?php foreach ($cardStats as $stat): ?>
+          <?php
+            $used = (float) $stat['spent_total'];
+            $limit = (float) $stat['credit_limit'];
+            $available = $limit - $used;
+            $future = (float) $stat['future_commitment'];
+          ?>
+          <div class="member">
+            <div class="meta">
+              <strong><?= e($stat['name']) ?></strong>
+              <span class="muted">Usado R$ <?= number_format($used, 2, ',', '.') ?> · Disponível R$ <?= number_format($available, 2, ',', '.') ?></span>
+            </div>
+            <span class="tag">Compromisso futuro: R$ <?= number_format($future, 2, ',', '.') ?></span>
+          </div>
+        <?php endforeach; ?>
+        <?php if (!$cardStats): ?><p class="muted">Ainda não há cartões com métricas para exibir.</p><?php endif; ?>
+      </div>
+    </div>
+
+    <div class="card enter">
+      <h2>Parcelas futuras</h2>
+      <div class="list">
+        <?php foreach ($cardInstallments as $installment): ?>
+          <div class="member">
+            <div class="meta">
+              <strong><?= e($installment['card_name']) ?> · <?= e($installment['purchase_description']) ?></strong>
+              <span class="muted">Parcela <?= (int) $installment['installment_number'] ?> · Vencimento <?= e($installment['due_date']) ?> · <?= e($installment['status']) ?></span>
+            </div>
+            <span class="tag">R$ <?= number_format((float) $installment['amount'], 2, ',', '.') ?></span>
+          </div>
+        <?php endforeach; ?>
+        <?php if (!$cardInstallments): ?><p class="muted">Sem parcelas geradas ainda.</p><?php endif; ?>
+      </div>
     </div>
   </div>
 </div>
