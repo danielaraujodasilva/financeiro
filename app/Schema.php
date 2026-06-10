@@ -266,6 +266,59 @@ CREATE TABLE IF NOT EXISTS credit_card_bills (
     FOREIGN KEY (card_id) REFERENCES credit_cards(id) ON DELETE CASCADE,
     FOREIGN KEY (payment_transaction_id) REFERENCES financial_transactions(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS financial_service_appointments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    appointment_date TEXT NOT NULL,
+    client_name TEXT NOT NULL,
+    service_name TEXT NOT NULL,
+    expected_amount REAL NOT NULL DEFAULT 0,
+    signal_amount REAL NOT NULL DEFAULT 0,
+    remaining_amount REAL NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'planned',
+    source TEXT NOT NULL DEFAULT 'manual',
+    external_provider TEXT NULL,
+    external_appointment_id TEXT NULL,
+    client_id INTEGER NULL,
+    lead_id INTEGER NULL,
+    notes TEXT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS financial_service_payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    appointment_id INTEGER NULL,
+    payment_date TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'signal',
+    amount REAL NOT NULL DEFAULT 0,
+    payment_method TEXT NOT NULL DEFAULT 'pix',
+    transaction_id INTEGER NULL,
+    notes TEXT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE,
+    FOREIGN KEY (appointment_id) REFERENCES financial_service_appointments(id) ON DELETE SET NULL,
+    FOREIGN KEY (transaction_id) REFERENCES financial_transactions(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS financial_marketing_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    report_date TEXT NOT NULL,
+    campaign_name TEXT NOT NULL,
+    spend_amount REAL NOT NULL DEFAULT 0,
+    leads_received INTEGER NOT NULL DEFAULT 0,
+    clients_closed INTEGER NOT NULL DEFAULT 0,
+    revenue_generated REAL NOT NULL DEFAULT 0,
+    notes TEXT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
+);
 SQL);
 
         self::ensureInviteColumns($pdo);

@@ -83,4 +83,18 @@ final class Financial
         $stmt->execute([$instanceId]);
         return $stmt->fetchAll();
     }
+
+    public function appointments(int $instanceId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM financial_service_appointments WHERE instance_id = ? ORDER BY appointment_date DESC, id DESC');
+        $stmt->execute([$instanceId]);
+        return $stmt->fetchAll();
+    }
+
+    public function marketingReports(int $instanceId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM financial_marketing_reports WHERE instance_id = ? ORDER BY report_date DESC, id DESC');
+        $stmt->execute([$instanceId]);
+        return $stmt->fetchAll();
+    }
 }

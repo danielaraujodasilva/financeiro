@@ -17,6 +17,7 @@ Status atual
 - Fase 2 do cartão de crédito concluída.
 - Fase 3 concluída com dashboard e telas principais.
 - Fase 4 concluída com insights, simulador e regras smart.
+- Fase 5 iniciada com integração opcional de CRM/estúdio.
 
 O que já existe
 - Autenticação básica.
@@ -72,10 +73,12 @@ Fase 4 - Recursos inteligentes
 - [x] Tornar o simulador mais sofisticado com impacto por prazo.
 
 Fase 5 - Integração com CRM/estúdio
-- [ ] Receita prevista por agendamento.
-- [ ] Sinal e restante por sessão.
-- [ ] Relatórios de serviços.
-- [ ] Relatórios de marketing.
+- [x] Receita prevista por agendamento.
+- [x] Sinal e restante por sessão.
+- [x] Relatórios de serviços.
+- [x] Relatórios de marketing.
+- [ ] Vínculo automático opcional com CRM externo.
+- [ ] Importação futura de agenda/leads reais.
 
 Fase 6 - Preparação para Open Finance futura
 - [ ] Tabelas de provedores.
@@ -91,8 +94,8 @@ Fase 7 - Segurança
 
 Prioridade imediata
 1. Melhorar edição/remoção nas telas.
-2. Evoluir para Fase 5.
-3. Integração com CRM/estúdio.
+2. Vínculo automático opcional com CRM externo.
+3. Importação futura de agenda/leads reais.
 4. Refinar relatórios.
 5. Preparar conciliação futura.
 
