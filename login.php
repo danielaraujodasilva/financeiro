@@ -12,14 +12,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!doctype html>
 <html lang="pt-br">
-<head><meta charset="utf-8"><title>Login - Financeiro</title></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login - Financeiro</title>
+<link rel="stylesheet" href="/assets/ui.css">
+</head>
 <body>
-<h1>Entrar</h1>
-<?php if ($error): ?><p><?= htmlspecialchars($error) ?></p><?php endif; ?>
-<form method="post">
-  <label>Email <input type="email" name="email" required></label><br>
-  <label>Senha <input type="password" name="password" required></label><br>
-  <button type="submit">Entrar</button>
-</form>
+<div class="wrap">
+  <div class="card enter" style="max-width:520px;margin:8vh auto 0">
+    <div class="tag">Acesso seguro</div>
+    <h1 class="headline">Entrar no Financeiro</h1>
+    <p class="muted">Sua conta e suas instâncias permanecem separadas e protegidas.</p>
+    <?php if ($error): ?><div class="toast bad"><?= e($error) ?></div><?php endif; ?>
+    <form method="post">
+      <label>Email
+        <input type="email" name="email" required>
+      </label>
+      <label>Senha
+        <input type="password" name="password" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Entrar</button>
+    </form>
+    <p class="note">Ainda não tem conta? <a href="/register.php">Criar agora</a></p>
+  </div>
+</div>
 </body>
 </html>

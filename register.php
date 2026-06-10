@@ -15,15 +15,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!doctype html>
 <html lang="pt-br">
-<head><meta charset="utf-8"><title>Criar conta - Financeiro</title></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Criar conta - Financeiro</title>
+<link rel="stylesheet" href="/assets/ui.css">
+</head>
 <body>
-<h1>Criar conta</h1>
-<?php if ($error): ?><p><?= htmlspecialchars($error) ?></p><?php endif; ?>
-<form method="post">
-  <label>Nome <input type="text" name="name" required></label><br>
-  <label>Email <input type="email" name="email" required></label><br>
-  <label>Senha <input type="password" name="password" required></label><br>
-  <button type="submit">Criar</button>
-</form>
+<div class="wrap">
+  <div class="card enter" style="max-width:560px;margin:6vh auto 0">
+    <div class="tag">Nova conta</div>
+    <h1 class="headline">Crie seu acesso</h1>
+    <p class="muted">Depois você pode criar sua primeira instância e convidar pessoas para uma conta conjunta.</p>
+    <?php if ($error): ?><div class="toast bad"><?= e($error) ?></div><?php endif; ?>
+    <form method="post">
+      <label>Nome
+        <input type="text" name="name" required>
+      </label>
+      <label>Email
+        <input type="email" name="email" required>
+      </label>
+      <label>Senha
+        <input type="password" name="password" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Criar conta</button>
+    </form>
+    <p class="note">Já tem conta? <a href="/login.php">Entrar</a></p>
+  </div>
+</div>
 </body>
 </html>

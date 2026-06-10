@@ -15,21 +15,42 @@ if (!$instance) {
 }
 
 $members = $auth->instanceMembers($instanceId);
+$currentUser = $auth->currentUser();
+$pendingInvites = $auth->pendingInvitesForEmail($currentUser['email'] ?? '');
 $canManage = $auth->canManageInstance($userId, $instanceId);
 $message = null;
 $error = null;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $canManage) {
-    $email = trim($_POST['email'] ?? '');
-    if ($email === '') {
-        $error = 'Informe um email.';
-    } else {
-        try {
-            $auth->inviteMember($instanceId, $email);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    try {
+        if ($action === 'invite' && $canManage) {
+            $email = trim($_POST['email'] ?? '');
+            if ($email === '') {
+                throw new RuntimeException('Informe um email.');
+            }
+            $auth->createInviteForUser($instanceId, $email, $userId);
             $message = 'Convite criado com sucesso.';
-        } catch (Throwable $e) {
-            $error = $e->getMessage();
+        } elseif ($action === 'role' && $canManage) {
+            $targetUserId = (int) ($_POST['target_user_id'] ?? 0);
+            $role = (string) ($_POST['role'] ?? 'member');
+            $auth->updateMemberRole($instanceId, $targetUserId, $role, $userId);
+            $message = 'Função atualizada.';
+        } elseif ($action === 'remove' && $canManage) {
+            $targetUserId = (int) ($_POST['target_user_id'] ?? 0);
+            $auth->removeMember($instanceId, $targetUserId, $userId);
+            $message = 'Membro removido.';
+        } elseif ($action === 'resend' && $canManage) {
+            $inviteId = (int) ($_POST['invite_id'] ?? 0);
+            $auth->resendInvite($inviteId, $userId);
+            $message = 'Convite reenviado.';
+        } elseif ($action === 'delete_invite' && $canManage) {
+            $inviteId = (int) ($_POST['invite_id'] ?? 0);
+            $auth->deleteInviteById($inviteId, $userId);
+            $message = 'Convite removido.';
         }
+    } catch (Throwable $e) {
+        $error = $e->getMessage();
     }
 }
 ?>
@@ -39,45 +60,134 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $canManage) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($instance['name']) ?> - Financeiro</title>
-<style>
-body{margin:0;font-family:Arial,sans-serif;background:#0b1120;color:#e5e7eb}
-.wrap{max-width:1000px;margin:0 auto;padding:32px}
-.card{background:#111827;border:1px solid #1f2937;border-radius:18px;padding:22px;margin:16px 0}
-input,button{padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#e2e8f0}
-button{background:#38bdf8;color:#082f49;font-weight:700}
-a{color:#7dd3fc}
-.ok{color:#86efac}.err{color:#fca5a5}
-</style>
+<link rel="stylesheet" href="/assets/ui.css">
 </head>
 <body>
 <div class="wrap">
-  <p><a href="/dashboard.php">Voltar</a></p>
-  <div class="card">
-    <h1><?= e($instance['name']) ?></h1>
-    <p>Slug: <?= e($instance['slug']) ?></p>
-    <p>Você está dentro desta instância. A partir daqui, todo dado do sistema financeiro vai ser filtrado por ela.</p>
+  <div class="topbar fade-in">
+    <div class="brand">
+      <div class="mark"></div>
+      <div>
+        <div class="tag">Instância ativa</div>
+        <h1 class="headline"><?= e($instance['name']) ?></h1>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="btn btn-secondary" href="/dashboard.php">Voltar</a>
+      <a class="btn btn-primary" href="/instance-create.php">Nova instância</a>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>Membros</h2>
-    <ul>
-      <?php foreach ($members as $member): ?>
-        <li><?= e($member['name']) ?> (<?= e($member['email']) ?>) - <?= e($member['role']) ?></li>
-      <?php endforeach; ?>
-    </ul>
+  <div class="card hero enter">
+    <div class="split">
+      <div>
+        <h2>Controle compartilhado com autonomia</h2>
+        <p class="muted">Essa área organiza a equipe desta instância. O acesso é isolado e os dados futuros do sistema vão respeitar esse limite automaticamente.</p>
+      </div>
+      <div class="statbar">
+        <div class="stat"><span class="muted">Membros</span><strong><?= count($members) ?></strong></div>
+        <div class="stat"><span class="muted">Convites</span><strong><?= count($pendingInvites) ?></strong></div>
+        <div class="stat"><span class="muted">Slug</span><strong><?= e($instance['slug']) ?></strong></div>
+      </div>
+    </div>
   </div>
 
-  <?php if ($canManage): ?>
-  <div class="card">
-    <h2>Convidar membro</h2>
-    <?php if ($message): ?><p class="ok"><?= e($message) ?></p><?php endif; ?>
-    <?php if ($error): ?><p class="err"><?= e($error) ?></p><?php endif; ?>
-    <form method="post">
-      <input type="email" name="email" placeholder="email@dominio.com" required>
-      <button type="submit">Enviar convite</button>
-    </form>
+  <?php if ($message): ?><div class="toast good"><?= e($message) ?></div><?php endif; ?>
+  <?php if ($error): ?><div class="toast bad"><?= e($error) ?></div><?php endif; ?>
+
+  <div class="grid">
+    <div class="card enter">
+      <h2>Membros</h2>
+      <div class="list stagger">
+        <?php foreach ($members as $member): ?>
+          <div class="member">
+            <div class="brand" style="gap:10px">
+              <div class="avatar"><?= strtoupper(substr($member['name'], 0, 1)) ?></div>
+              <div class="meta">
+                <strong><?= e($member['name']) ?></strong>
+                <span class="muted"><?= e($member['email']) ?></span>
+              </div>
+            </div>
+            <div class="actions" style="justify-content:flex-end">
+              <span class="tag"><?= e($member['role']) ?></span>
+              <?php if ($canManage): ?>
+                <?php if ($member['role'] !== 'owner'): ?>
+                  <form method="post">
+                    <input type="hidden" name="action" value="role">
+                    <input type="hidden" name="target_user_id" value="<?= (int) $member['id'] ?>">
+                    <input type="hidden" name="role" value="owner">
+                    <button class="btn btn-secondary" type="submit">Tornar dono</button>
+                  </form>
+                <?php endif; ?>
+                <?php if ($member['role'] !== 'owner'): ?>
+                  <form method="post">
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="target_user_id" value="<?= (int) $member['id'] ?>">
+                    <button class="btn btn-danger" type="submit">Remover</button>
+                  </form>
+                <?php endif; ?>
+              <?php endif; ?>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <div class="shell">
+      <?php if ($canManage): ?>
+      <div class="card enter">
+        <h2>Convidar membro</h2>
+        <p class="note">Convite por e-mail com token único. O usuário só entra ao aceitar com a mesma conta.</p>
+        <form method="post">
+          <input type="hidden" name="action" value="invite">
+          <label>Email do convidado
+            <input type="email" name="email" placeholder="email@dominio.com" required>
+          </label>
+          <button class="btn btn-primary" type="submit">Enviar convite</button>
+        </form>
+      </div>
+
+      <div class="card enter">
+        <h2>Convites pendentes</h2>
+        <?php
+        $stmt = $pdo->prepare('
+            SELECT id, email, token, status, created_at
+            FROM invites
+            WHERE instance_id = ? AND status = "pending"
+            ORDER BY created_at DESC
+        ');
+        $stmt->execute([$instanceId]);
+        $instanceInvites = $stmt->fetchAll();
+        ?>
+        <div class="list">
+          <?php foreach ($instanceInvites as $invite): ?>
+            <div class="member">
+              <div class="meta">
+                <strong><?= e($invite['email']) ?></strong>
+                <span class="muted">Criado em <?= e($invite['created_at']) ?></span>
+              </div>
+              <div class="actions">
+                <form method="post">
+                  <input type="hidden" name="action" value="resend">
+                  <input type="hidden" name="invite_id" value="<?= (int) $invite['id'] ?>">
+                  <button class="btn btn-good" type="submit">Reenviar</button>
+                </form>
+                <form method="post">
+                  <input type="hidden" name="action" value="delete_invite">
+                  <input type="hidden" name="invite_id" value="<?= (int) $invite['id'] ?>">
+                  <button class="btn btn-danger" type="submit">Excluir</button>
+                </form>
+              </div>
+            </div>
+          <?php endforeach; ?>
+          <?php if (!$instanceInvites): ?>
+            <p class="muted">Nenhum convite pendente.</p>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endif; ?>
+    </div>
   </div>
-  <?php endif; ?>
 </div>
 </body>
 </html>

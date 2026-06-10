@@ -191,6 +191,83 @@ final class Auth
         return $stmt->fetchColumn() === 'owner';
     }
 
+    public function updateMemberRole(int $instanceId, int $targetUserId, string $role, int $actingUserId): void
+    {
+        if (!$this->canManageInstance($actingUserId, $instanceId)) {
+            throw new RuntimeException('Sem permissão.');
+        }
+
+        if (!in_array($role, ['owner', 'member'], true)) {
+            throw new RuntimeException('Papel inválido.');
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            if ($role === 'owner') {
+                $stmt = $this->pdo->prepare('UPDATE instance_members SET role = "member" WHERE instance_id = ? AND role = "owner"');
+                $stmt->execute([$instanceId]);
+            }
+
+            $stmt = $this->pdo->prepare('UPDATE instance_members SET role = ? WHERE instance_id = ? AND user_id = ?');
+            $stmt->execute([$role, $instanceId, $targetUserId]);
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    public function removeMember(int $instanceId, int $targetUserId, int $actingUserId): void
+    {
+        if (!$this->canManageInstance($actingUserId, $instanceId)) {
+            throw new RuntimeException('Sem permissão.');
+        }
+
+        $stmt = $this->pdo->prepare('DELETE FROM instance_members WHERE instance_id = ? AND user_id = ? AND role <> "owner"');
+        $stmt->execute([$instanceId, $targetUserId]);
+    }
+
+    public function deleteInviteById(int $inviteId, int $actingUserId): void
+    {
+        $stmt = $this->pdo->prepare('
+            DELETE FROM invites
+            WHERE id = ?
+              AND instance_id IN (
+                SELECT instance_id FROM instance_members WHERE user_id = ? AND role = "owner"
+              )
+        ');
+        $stmt->execute([$inviteId, $actingUserId]);
+    }
+
+    public function resendInvite(int $inviteId, int $actingUserId): string
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT i.instance_id, i.email
+            FROM invites i
+            INNER JOIN instance_members m ON m.instance_id = i.instance_id
+            WHERE i.id = ? AND m.user_id = ? AND m.role = "owner"
+        ');
+        $stmt->execute([$inviteId, $actingUserId]);
+        $invite = $stmt->fetch();
+        if (!$invite) {
+            throw new RuntimeException('Convite não encontrado.');
+        }
+
+        $token = bin2hex(random_bytes(24));
+        $stmt = $this->pdo->prepare('UPDATE invites SET token = ?, status = "pending", created_at = datetime("now"), accepted_at = NULL WHERE id = ?');
+        $stmt->execute([$token, $inviteId]);
+        return $token;
+    }
+
+    public function createInviteForUser(int $instanceId, string $email, int $actingUserId): string
+    {
+        if (!$this->canManageInstance($actingUserId, $instanceId)) {
+            throw new RuntimeException('Sem permissão.');
+        }
+
+        return $this->inviteMember($instanceId, $email);
+    }
+
     public function requireLogin(): int
     {
         $id = $this->userId();

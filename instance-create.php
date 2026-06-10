@@ -33,13 +33,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!doctype html>
 <html lang="pt-br">
-<head><meta charset="utf-8"><title>Nova instância - Financeiro</title></head>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nova instância - Financeiro</title>
+<link rel="stylesheet" href="/assets/ui.css">
+</head>
 <body>
-<h1>Criar instância</h1>
-<?php if ($error): ?><p><?= htmlspecialchars($error) ?></p><?php endif; ?>
-<form method="post">
-  <label>Nome <input type="text" name="name" required></label><br>
-  <button type="submit">Criar</button>
-</form>
+<div class="wrap">
+  <div class="card enter" style="max-width:560px;margin:6vh auto 0">
+    <div class="tag">Organização</div>
+    <h1 class="headline">Criar nova instância</h1>
+    <p class="muted">Cada instância funciona como um espaço separado dentro do sistema.</p>
+    <?php if ($error): ?><div class="toast bad"><?= e($error) ?></div><?php endif; ?>
+    <form method="post">
+      <label>Nome da instância
+        <input type="text" name="name" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Criar</button>
+    </form>
+  </div>
+</div>
 </body>
 </html>
