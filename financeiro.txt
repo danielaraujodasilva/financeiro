@@ -13,6 +13,7 @@ Status atual
 - Conta conjunta via membros e convites funcionando.
 - Interface base com visual moderno e responsivo funcionando.
 - Correção de URLs para operar em /financeiro concluída.
+- Fase 1 do banco de dados iniciada.
 
 O que já existe
 - Autenticação básica.
@@ -25,9 +26,10 @@ O que já existe
 - Webhook de sincronização com GitHub.
 
 Fase 1 - Banco de dados base
-- [ ] Criar ou revisar todas as tabelas financeiras base.
-- [ ] Inserir centros financeiros iniciais.
-- [ ] Inserir categorias iniciais e subcategorias.
+- [x] Criar ou revisar todas as tabelas financeiras base.
+- [x] Inserir centros financeiros iniciais.
+- [x] Inserir categorias iniciais.
+- [ ] Inserir subcategorias financeiras detalhadas.
 - [ ] Criar contas financeiras.
 - [ ] Criar lançamentos financeiros.
 - [ ] Criar recorrências.
@@ -80,9 +82,9 @@ Fase 7 - Segurança
 - [ ] Preparar trilha de auditoria nas alterações importantes.
 
 Prioridade imediata
-1. Banco de dados base.
-2. Centros e categorias.
-3. Contas e lançamentos.
+1. Subcategorias detalhadas.
+2. Contas financeiras.
+3. Lançamentos financeiros.
 4. Recorrências.
 5. Dashboard financeiro MVP.
 

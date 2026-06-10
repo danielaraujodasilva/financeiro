@@ -99,6 +99,8 @@ final class Auth
             $stmt = $this->pdo->prepare('INSERT INTO instance_members (instance_id, user_id, role, created_at) VALUES (?, ?, "owner", datetime("now"))');
             $stmt->execute([$instanceId, $ownerUserId]);
 
+            Schema::seedFinancialBaseForInstance($this->pdo, $instanceId);
+
             $this->pdo->commit();
             return $instanceId;
         } catch (Throwable $e) {
