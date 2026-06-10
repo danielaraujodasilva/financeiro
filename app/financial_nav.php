@@ -18,6 +18,9 @@ function financial_nav(int $instanceId, string $current = ''): void
         'calendar' => ['Calendário', base_path('calendar.php?instance_id=' . $instanceId)],
         'reports' => ['Relatórios', base_path('reports.php?instance_id=' . $instanceId)],
         'dre' => ['DRE', base_path('dre.php?instance_id=' . $instanceId)],
+        'insights' => ['Insights', base_path('insights.php?instance_id=' . $instanceId)],
+        'simulator' => ['Simulador', base_path('simulator.php?instance_id=' . $instanceId)],
+        'smart_rules' => ['Regras Smart', base_path('smart-rules.php?instance_id=' . $instanceId)],
     ];
     echo '<div class="card enter" style="margin-bottom:16px"><div class="actions">';
     foreach ($items as $key => [$label, $href]) {

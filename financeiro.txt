@@ -16,6 +16,7 @@ Status atual
 - Fase 1 do banco de dados concluída.
 - Fase 2 do cartão de crédito concluída.
 - Fase 3 concluída com dashboard e telas principais.
+- Fase 4 iniciada com insights, simulador e regras smart.
 
 O que já existe
 - Autenticação básica.
@@ -64,9 +65,11 @@ Fase 3 - Telas principais
 - [x] DRE simples do estúdio.
 
 Fase 4 - Recursos inteligentes
-- [ ] Tela de insights.
-- [ ] Simulador de decisão.
-- [ ] Regras automáticas de categorização.
+- [x] Tela de insights.
+- [x] Simulador de decisão.
+- [x] Regras automáticas de categorização.
+- [ ] Melhorar precisão das análises.
+- [ ] Tornar o simulador mais sofisticado com impacto por prazo.
 
 Fase 5 - Integração com CRM/estúdio
 - [ ] Receita prevista por agendamento.
@@ -87,11 +90,11 @@ Fase 7 - Segurança
 - [ ] Preparar trilha de auditoria nas alterações importantes.
 
 Prioridade imediata
-1. Filtros e consultas inteligentes.
-2. Insights automáticos.
-3. Simulador de decisão.
-4. Melhoria de edição/remoção nas telas.
-5. Evoluir para Fase 4.
+1. Melhorar precisão das análises.
+2. Refinar o simulador.
+3. Melhorar edição/remoção nas telas.
+4. Evoluir para Fase 5.
+5. Integração com CRM/estúdio.
 
 Notas
 - Não implementar Open Finance agora.
