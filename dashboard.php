@@ -4,6 +4,112 @@ require __DIR__ . '/bootstrap.php';
 $userId = $auth->requireLogin();
 $user = $auth->currentUser();
 $instances = $auth->instancesForUser($userId);
+
+$today = date('Y-m-d');
+$monthStart = date('Y-m-01');
+$monthEnd = date('Y-m-t');
+$plus7 = date('Y-m-d', strtotime('+7 days'));
+
+function finance_instance_summary(PDO $pdo, int $instanceId, string $monthStart, string $monthEnd, string $today, string $plus7): array
+{
+    $summaryStmt = $pdo->prepare('
+        SELECT
+            COALESCE(SUM(CASE WHEN type = "income" AND status = "paid" AND transaction_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) AS income_received,
+            COALESCE(SUM(CASE WHEN type = "income" AND status IN ("planned", "pending") AND transaction_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) AS income_planned,
+            COALESCE(SUM(CASE WHEN type = "expense" AND status = "paid" AND transaction_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) AS expense_paid,
+            COALESCE(SUM(CASE WHEN type = "expense" AND status IN ("planned", "pending") AND transaction_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) AS expense_planned,
+            COALESCE(SUM(CASE WHEN due_date < ? AND status NOT IN ("paid", "canceled") AND type = "expense" THEN amount ELSE 0 END), 0) AS overdue_amount,
+            COALESCE(SUM(CASE WHEN due_date BETWEEN ? AND ? AND status NOT IN ("paid", "canceled") AND type IN ("income", "expense") THEN amount ELSE 0 END), 0) AS due_next7,
+            COALESCE(SUM(CASE WHEN status = "paid" AND type = "income" AND transaction_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) -
+            COALESCE(SUM(CASE WHEN status = "paid" AND type = "expense" AND transaction_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) AS net_month,
+            COALESCE(SUM(CASE WHEN status IN ("planned", "pending") AND type = "expense" AND transaction_date BETWEEN ? AND ? THEN amount ELSE 0 END), 0) AS future_expense_month
+        FROM financial_transactions
+        WHERE instance_id = ?
+    ');
+    $summaryStmt->execute([
+        $monthStart, $monthEnd,
+        $monthStart, $monthEnd,
+        $monthStart, $monthEnd,
+        $monthStart, $monthEnd,
+        $today,
+        $today, $plus7,
+        $monthStart, $monthEnd,
+        $monthStart, $monthEnd,
+        $monthStart, $monthEnd,
+        $instanceId,
+    ]);
+    $summary = $summaryStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    $reserveStmt = $pdo->prepare('SELECT COALESCE(SUM(current_balance),0) FROM financial_accounts WHERE instance_id = ? AND type = "investment"');
+    $reserveStmt->execute([$instanceId]);
+    $reserve = (float) $reserveStmt->fetchColumn();
+
+    $balanceStmt = $pdo->prepare('SELECT COALESCE(SUM(current_balance),0) FROM financial_accounts WHERE instance_id = ?');
+    $balanceStmt->execute([$instanceId]);
+    $currentBalance = (float) $balanceStmt->fetchColumn();
+
+    $cardStmt = $pdo->prepare('
+        SELECT COALESCE(SUM(total_amount),0)
+        FROM credit_card_bills
+        WHERE instance_id = ? AND status IN ("open", "overdue")
+    ');
+    $cardStmt->execute([$instanceId]);
+    $openBills = (float) $cardStmt->fetchColumn();
+
+    $projected = $currentBalance + (float) ($summary['net_month'] ?? 0) - (float) ($summary['future_expense_month'] ?? 0) - $openBills;
+
+    $risk = 'baixo';
+    if ($projected < 0 || (float) ($summary['overdue_amount'] ?? 0) > 0) {
+        $risk = 'alto';
+    } elseif ($openBills > 0 || (float) ($summary['expense_planned'] ?? 0) > 0) {
+        $risk = 'médio';
+    }
+
+    return [
+        'current_balance' => $currentBalance,
+        'income_received' => (float) ($summary['income_received'] ?? 0),
+        'income_planned' => (float) ($summary['income_planned'] ?? 0),
+        'expense_paid' => (float) ($summary['expense_paid'] ?? 0),
+        'expense_planned' => (float) ($summary['expense_planned'] ?? 0),
+        'overdue_amount' => (float) ($summary['overdue_amount'] ?? 0),
+        'due_next7' => (float) ($summary['due_next7'] ?? 0),
+        'projected' => $projected,
+        'reserve' => $reserve,
+        'open_bills' => $openBills,
+        'risk' => $risk,
+    ];
+}
+
+$instanceSummaries = [];
+foreach ($instances as $inst) {
+    $instanceSummaries[] = array_merge($inst, finance_instance_summary($pdo, (int) $inst['id'], $monthStart, $monthEnd, $today, $plus7));
+}
+
+$overall = [
+    'current_balance' => 0,
+    'income_received' => 0,
+    'income_planned' => 0,
+    'expense_paid' => 0,
+    'expense_planned' => 0,
+    'overdue_amount' => 0,
+    'due_next7' => 0,
+    'reserve' => 0,
+    'open_bills' => 0,
+];
+foreach ($instanceSummaries as $summary) {
+    foreach ($overall as $key => $value) {
+        $overall[$key] += (float) ($summary[$key] ?? 0);
+    }
+}
+
+$overall['projected'] = $overall['current_balance'] + $overall['income_received'] + $overall['income_planned'] - $overall['expense_paid'] - $overall['expense_planned'] - $overall['overdue_amount'] - $overall['open_bills'];
+
+$overallRisk = 'baixo';
+if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
+    $overallRisk = 'alto';
+} elseif ($overall['open_bills'] > 0 || $overall['expense_planned'] > 0) {
+    $overallRisk = 'médio';
+}
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -30,8 +136,20 @@ $instances = $auth->instancesForUser($userId);
   </div>
 
   <div class="card hero enter">
-    <h2>Seu centro de comando financeiro</h2>
-    <p class="muted">Cada instância fica isolada, com acesso controlado por membros e convites. Essa base já está pronta para o sistema crescer sem confundir dados entre contas.</p>
+    <div class="split">
+      <div>
+        <h2>Seu centro de comando financeiro</h2>
+        <p class="muted">Cada instância fica isolada, com acesso controlado por membros e convites. O painel já cruza entradas, saídas, faturas, reserva e risco do mês.</p>
+      </div>
+      <div>
+        <div class="tag">Risco geral: <?= e($overallRisk) ?></div>
+        <div class="statbar">
+          <div class="stat"><span class="muted">Saldo atual</span><strong>R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></strong></div>
+          <div class="stat"><span class="muted">Projetado</span><strong>R$ <?= number_format($overall['projected'], 2, ',', '.') ?></strong></div>
+          <div class="stat"><span class="muted">Reserva</span><strong>R$ <?= number_format($overall['reserve'], 2, ',', '.') ?></strong></div>
+        </div>
+      </div>
+    </div>
     <div class="statbar">
       <div class="stat"><span class="muted">Instâncias</span><strong><?= count($instances) ?></strong></div>
       <div class="stat"><span class="muted">Convites pendentes</span><strong><?= count($auth->pendingInvitesForEmail($user['email'])) ?></strong></div>
@@ -41,15 +159,30 @@ $instances = $auth->instancesForUser($userId);
 
   <div class="grid">
     <div class="card enter">
+      <h2>Visão do mês</h2>
+      <div class="statbar">
+        <div class="stat"><span class="muted">Entradas recebidas</span><strong>R$ <?= number_format($overall['income_received'], 2, ',', '.') ?></strong></div>
+        <div class="stat"><span class="muted">Entradas previstas</span><strong>R$ <?= number_format($overall['income_planned'], 2, ',', '.') ?></strong></div>
+        <div class="stat"><span class="muted">Saídas pagas</span><strong>R$ <?= number_format($overall['expense_paid'], 2, ',', '.') ?></strong></div>
+        <div class="stat"><span class="muted">Saídas previstas</span><strong>R$ <?= number_format($overall['expense_planned'], 2, ',', '.') ?></strong></div>
+        <div class="stat"><span class="muted">Vencido</span><strong>R$ <?= number_format($overall['overdue_amount'], 2, ',', '.') ?></strong></div>
+        <div class="stat"><span class="muted">Faturas abertas</span><strong>R$ <?= number_format($overall['open_bills'], 2, ',', '.') ?></strong></div>
+      </div>
+    </div>
+
+    <div class="card enter">
       <h2>Suas instâncias</h2>
       <div class="list stagger">
-        <?php foreach ($instances as $instance): ?>
+        <?php foreach ($instanceSummaries as $instance): ?>
           <div class="member">
             <div class="meta">
               <strong><?= e($instance['name']) ?></strong>
-              <span class="muted">Função: <?= e($instance['role']) ?> · Slug: <?= e($instance['slug']) ?></span>
+              <span class="muted">Função: <?= e($instance['role']) ?> · Risco: <?= e($instance['risk']) ?> · Slug: <?= e($instance['slug']) ?></span>
             </div>
-            <a class="btn btn-primary" href="<?= e(base_path('instance.php?id=' . (int) $instance['id'])) ?>">Abrir</a>
+            <div class="actions">
+              <a class="btn btn-secondary" href="<?= e(base_path('instance.php?id=' . (int) $instance['id'])) ?>">Abrir</a>
+              <a class="btn btn-primary" href="<?= e(base_path('financial.php?instance_id=' . (int) $instance['id'])) ?>">Financeiro</a>
+            </div>
           </div>
         <?php endforeach; ?>
         <?php if (!$instances): ?>
