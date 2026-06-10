@@ -45,5 +45,17 @@ CREATE TABLE IF NOT EXISTS invites (
     FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
 );
 SQL);
+
+        self::ensureInviteColumns($pdo);
+    }
+
+    private static function ensureInviteColumns(PDO $pdo): void
+    {
+        $columns = $pdo->query('PRAGMA table_info(invites)')->fetchAll(PDO::FETCH_ASSOC);
+        $names = array_column($columns, 'name');
+
+        if (!in_array('accepted_at', $names, true)) {
+            $pdo->exec('ALTER TABLE invites ADD COLUMN accepted_at TEXT NULL');
+        }
     }
 }
