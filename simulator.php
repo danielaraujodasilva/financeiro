@@ -12,12 +12,19 @@ $simulation=null;
 if($_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action']??'')==='simulate'){
     $amount=(float)($_POST['amount']??0);
     $installments=max(1,(int)($_POST['installments_count']??1));
+    $months=max(1,$installments);
     $balance=array_sum(array_map(fn($a)=>(float)$a['current_balance'],$accounts));
     $monthlyImpact=round($amount/$installments,2);
+    $next30 = round($amount / max(1, min($months, 1)), 2);
+    $next90 = round($amount / max(1, min($months, 3)), 2);
+    $survivalAfter = $months > 0 ? max(0, floor(($balance - $amount) / max($monthlyImpact, 1))) : 0;
     $simulation=[
         'monthlyImpact'=>$monthlyImpact,
         'currentBalance'=>$balance,
         'projectedAfter'=>$balance-$amount,
+        'next30'=>$next30,
+        'next90'=>$next90,
+        'survivalAfter'=>$survivalAfter,
         'risk'=>$amount > $balance ? 'alto' : ($installments>6 ? 'médio' : 'baixo'),
     ];
 }
