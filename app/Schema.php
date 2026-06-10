@@ -196,6 +196,76 @@ CREATE TABLE IF NOT EXISTS financial_rules (
     FOREIGN KEY (category_id) REFERENCES financial_categories(id) ON DELETE RESTRICT,
     FOREIGN KEY (account_id) REFERENCES financial_accounts(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS credit_cards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    account_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    bank_name TEXT NULL,
+    credit_limit REAL NOT NULL DEFAULT 0,
+    closing_day INTEGER NULL,
+    due_day INTEGER NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(instance_id, name),
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE,
+    FOREIGN KEY (account_id) REFERENCES financial_accounts(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS credit_card_purchases (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    card_id INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    total_amount REAL NOT NULL,
+    purchase_date TEXT NOT NULL,
+    installments_count INTEGER NOT NULL DEFAULT 1,
+    center_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    notes TEXT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE,
+    FOREIGN KEY (card_id) REFERENCES credit_cards(id) ON DELETE CASCADE,
+    FOREIGN KEY (center_id) REFERENCES financial_centers(id) ON DELETE RESTRICT,
+    FOREIGN KEY (category_id) REFERENCES financial_categories(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE IF NOT EXISTS credit_card_installments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    purchase_id INTEGER NOT NULL,
+    installment_number INTEGER NOT NULL,
+    due_date TEXT NOT NULL,
+    amount REAL NOT NULL,
+    status TEXT NOT NULL DEFAULT 'planned',
+    transaction_id INTEGER NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(purchase_id, installment_number),
+    FOREIGN KEY (purchase_id) REFERENCES credit_card_purchases(id) ON DELETE CASCADE,
+    FOREIGN KEY (transaction_id) REFERENCES financial_transactions(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS credit_card_bills (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    card_id INTEGER NOT NULL,
+    reference_month INTEGER NOT NULL,
+    reference_year INTEGER NOT NULL,
+    closing_date TEXT NOT NULL,
+    due_date TEXT NOT NULL,
+    total_amount REAL NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'open',
+    payment_transaction_id INTEGER NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(card_id, reference_month, reference_year),
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE,
+    FOREIGN KEY (card_id) REFERENCES credit_cards(id) ON DELETE CASCADE,
+    FOREIGN KEY (payment_transaction_id) REFERENCES financial_transactions(id) ON DELETE SET NULL
+);
 SQL);
 
         self::ensureInviteColumns($pdo);

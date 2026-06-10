@@ -152,6 +152,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
                 $message = 'Regra criada.';
                 break;
+            case 'create_card':
+                $stmt = $pdo->prepare('INSERT INTO credit_cards (instance_id, account_id, name, bank_name, credit_limit, closing_day, due_day, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)');
+                $stmt->execute([
+                    $instanceId,
+                    (int) post_value('card_account_id'),
+                    trim((string) post_value('card_name')),
+                    trim((string) post_value('card_bank_name', '')),
+                    (float) post_value('card_credit_limit', 0),
+                    post_value('card_closing_day') === '' ? null : (int) post_value('card_closing_day'),
+                    post_value('card_due_day') === '' ? null : (int) post_value('card_due_day'),
+                    dt_now(), dt_now()
+                ]);
+                $message = 'Cartão criado.';
+                break;
+            case 'create_card_purchase':
+                $installments = max(1, (int) post_value('installments_count', 1));
+                $totalAmount = (float) post_value('purchase_total_amount', 0);
+                $purchaseDate = (string) post_value('purchase_date', date('Y-m-d'));
+                $purchaseMonth = (int) date('n', strtotime($purchaseDate));
+                $purchaseYear = (int) date('Y', strtotime($purchaseDate));
+
+                $stmt = $pdo->prepare('INSERT INTO credit_card_purchases (instance_id, card_id, description, total_amount, purchase_date, installments_count, center_id, category_id, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([
+                    $instanceId,
+                    (int) post_value('purchase_card_id'),
+                    trim((string) post_value('purchase_description')),
+                    $totalAmount,
+                    $purchaseDate,
+                    $installments,
+                    (int) post_value('purchase_center_id'),
+                    (int) post_value('purchase_category_id'),
+                    trim((string) post_value('purchase_notes', '')),
+                    dt_now(), dt_now()
+                ]);
+                $purchaseId = (int) $pdo->lastInsertId();
+                $installmentAmount = round($totalAmount / $installments, 2);
+
+                $cardStmt = $pdo->prepare('SELECT closing_day, due_day FROM credit_cards WHERE id = ? AND instance_id = ?');
+                $cardStmt->execute([(int) post_value('purchase_card_id'), $instanceId]);
+                $card = $cardStmt->fetch(PDO::FETCH_ASSOC) ?: ['closing_day' => 0, 'due_day' => 0];
+                $closingDay = max(1, (int) ($card['closing_day'] ?? 1));
+                $dueDay = max(1, (int) ($card['due_day'] ?? 1));
+
+                $insStmt = $pdo->prepare('INSERT INTO credit_card_installments (purchase_id, installment_number, due_date, amount, status, transaction_id, created_at, updated_at) VALUES (?, ?, ?, ?, "planned", NULL, ?, ?)');
+                for ($i = 1; $i <= $installments; $i++) {
+                    $due = new DateTime($purchaseDate);
+                    $due->modify('first day of next month');
+                    $due->modify('+' . ($i - 1) . ' month');
+                    $due->setDate((int) $due->format('Y'), (int) $due->format('m'), min($dueDay, (int) $due->format('t')));
+                    $insStmt->execute([$purchaseId, $i, $due->format('Y-m-d'), $installmentAmount, dt_now(), dt_now()]);
+                }
+
+                $billMonth = $purchaseMonth;
+                $billYear = $purchaseYear;
+                $billStmt = $pdo->prepare('INSERT OR IGNORE INTO credit_card_bills (instance_id, card_id, reference_month, reference_year, closing_date, due_date, total_amount, status, payment_transaction_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, "open", NULL, ?, ?)');
+                $billStmt->execute([$instanceId, (int) post_value('purchase_card_id'), $billMonth, $billYear, $purchaseDate, $purchaseDate, dt_now(), dt_now()]);
+                $message = 'Compra do cartão criada com parcelas.';
+                break;
         }
     } catch (Throwable $e) {
         $error = $e->getMessage();
@@ -166,6 +224,9 @@ $recurring = $pdo->query('SELECT * FROM financial_recurring WHERE instance_id = 
 $budgets = $pdo->query('SELECT * FROM financial_budgets WHERE instance_id = ' . (int) $instanceId . ' ORDER BY year DESC, month DESC')->fetchAll();
 $goals = $pdo->query('SELECT * FROM financial_goals WHERE instance_id = ' . (int) $instanceId . ' ORDER BY priority ASC, id DESC')->fetchAll();
 $rules = $pdo->query('SELECT * FROM financial_rules WHERE instance_id = ' . (int) $instanceId . ' ORDER BY id DESC')->fetchAll();
+$cards = $pdo->query('SELECT * FROM credit_cards WHERE instance_id = ' . (int) $instanceId . ' ORDER BY id DESC')->fetchAll();
+$cardPurchases = $pdo->query('SELECT p.*, c.name AS card_name FROM credit_card_purchases p INNER JOIN credit_cards c ON c.id = p.card_id WHERE p.instance_id = ' . (int) $instanceId . ' ORDER BY p.purchase_date DESC, p.id DESC')->fetchAll();
+$cardBills = $pdo->query('SELECT b.*, c.name AS card_name FROM credit_card_bills b INNER JOIN credit_cards c ON c.id = b.card_id WHERE b.instance_id = ' . (int) $instanceId . ' ORDER BY b.reference_year DESC, b.reference_month DESC')->fetchAll();
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -458,6 +519,104 @@ $rules = $pdo->query('SELECT * FROM financial_rules WHERE instance_id = ' . (int
           <div class="member"><div class="meta"><strong><?= e($rule['match_text']) ?></strong><span class="muted"><?= e($rule['match_type']) ?> · <?= e((string) $rule['transaction_type']) ?></span></div><span class="tag">regra</span></div>
         <?php endforeach; ?>
       </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card enter">
+      <h2>Cartões de crédito</h2>
+      <form method="post" class="split">
+        <input type="hidden" name="action" value="create_card">
+        <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
+        <label>Nome do cartão<input type="text" name="card_name" required></label>
+        <label>Conta vinculada
+          <select name="card_account_id" required>
+            <?php foreach ($accounts as $account): ?>
+              <option value="<?= (int) $account['id'] ?>"><?= e($account['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>Banco<input type="text" name="card_bank_name"></label>
+        <label>Limite de crédito<input type="number" step="0.01" name="card_credit_limit" value="0"></label>
+        <label>Fechamento<input type="number" name="card_closing_day" min="1" max="31"></label>
+        <label>Vencimento<input type="number" name="card_due_day" min="1" max="31"></label>
+        <button class="btn btn-primary" type="submit">Criar cartão</button>
+      </form>
+      <div class="list">
+        <?php foreach ($cards as $card): ?>
+          <div class="member">
+            <div class="meta">
+              <strong><?= e($card['name']) ?></strong>
+              <span class="muted"><?= e((string) $card['bank_name']) ?> · conta #<?= (int) $card['account_id'] ?></span>
+            </div>
+            <span class="tag">R$ <?= number_format((float) $card['credit_limit'], 2, ',', '.') ?></span>
+          </div>
+        <?php endforeach; ?>
+        <?php if (!$cards): ?><p class="muted">Nenhum cartão cadastrado ainda.</p><?php endif; ?>
+      </div>
+    </div>
+
+    <div class="card enter">
+      <h2>Compra parcelada</h2>
+      <form method="post" class="split">
+        <input type="hidden" name="action" value="create_card_purchase">
+        <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
+        <label>Cartão
+          <select name="purchase_card_id" required>
+            <?php foreach ($cards as $card): ?>
+              <option value="<?= (int) $card['id'] ?>"><?= e($card['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>Descrição<input type="text" name="purchase_description" required></label>
+        <label>Valor total<input type="number" step="0.01" name="purchase_total_amount" required></label>
+        <label>Data da compra<input type="date" name="purchase_date" value="<?= date('Y-m-d') ?>"></label>
+        <label>Parcelas<input type="number" name="installments_count" min="1" value="1"></label>
+        <label>Centro
+          <select name="purchase_center_id" required>
+            <?php foreach ($centers as $center): ?>
+              <option value="<?= (int) $center['id'] ?>"><?= e($center['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>Categoria
+          <select name="purchase_category_id" required>
+            <?php foreach ($categories as $category): ?>
+              <option value="<?= (int) $category['id'] ?>"><?= e($category['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>Observações<input type="text" name="purchase_notes"></label>
+        <button class="btn btn-primary" type="submit">Cadastrar compra</button>
+      </form>
+      <div class="list">
+        <?php foreach ($cardPurchases as $purchase): ?>
+          <div class="member">
+            <div class="meta">
+              <strong><?= e($purchase['description']) ?></strong>
+              <span class="muted"><?= e($purchase['card_name']) ?> · <?= (int) $purchase['installments_count'] ?>x · <?= e($purchase['purchase_date']) ?></span>
+            </div>
+            <span class="tag">R$ <?= number_format((float) $purchase['total_amount'], 2, ',', '.') ?></span>
+          </div>
+        <?php endforeach; ?>
+        <?php if (!$cardPurchases): ?><p class="muted">Sem compras registradas.</p><?php endif; ?>
+      </div>
+    </div>
+  </div>
+
+  <div class="card enter">
+    <h2>Faturas do cartão</h2>
+    <div class="list">
+      <?php foreach ($cardBills as $bill): ?>
+        <div class="member">
+          <div class="meta">
+            <strong><?= e($bill['card_name']) ?> · <?= (int) $bill['reference_month'] ?>/<?= (int) $bill['reference_year'] ?></strong>
+            <span class="muted">Vencimento <?= e($bill['due_date']) ?> · Status <?= e($bill['status']) ?></span>
+          </div>
+          <span class="tag">R$ <?= number_format((float) $bill['total_amount'], 2, ',', '.') ?></span>
+        </div>
+      <?php endforeach; ?>
+      <?php if (!$cardBills): ?><p class="muted">Nenhuma fatura gerada ainda.</p><?php endif; ?>
     </div>
   </div>
 </div>

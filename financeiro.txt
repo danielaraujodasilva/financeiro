@@ -14,6 +14,7 @@ Status atual
 - Interface base com visual moderno e responsivo funcionando.
 - Correção de URLs para operar em /financeiro concluída.
 - Fase 1 do banco de dados concluída.
+- Fase 2 iniciada com cartões, compras e faturas.
 
 O que já existe
 - Autenticação básica.
@@ -38,10 +39,13 @@ Fase 1 - Banco de dados base
 - [x] Criar regras automáticas.
 
 Fase 2 - Cartão de crédito
-- [ ] Criar tabelas de cartões.
-- [ ] Criar compras e parcelas.
-- [ ] Criar faturas.
+- [x] Criar tabelas de cartões.
+- [x] Criar compras e parcelas.
+- [x] Criar faturas.
 - [ ] Calcular comprometimento futuro.
+- [ ] Consolidar visão de limite usado e disponível.
+- [ ] Consolidar projeção das próximas faturas.
+- [ ] Melhorar edição/remoção de cartões e compras.
 
 Fase 3 - Telas principais
 - [ ] Dashboard financeiro completo.
@@ -82,11 +86,11 @@ Fase 7 - Segurança
 - [ ] Preparar trilha de auditoria nas alterações importantes.
 
 Prioridade imediata
-1. Dashboard financeiro MVP.
-2. Filtros e consultas inteligentes.
-3. KPIs de saldo/fluxo.
-4. Relatório mensal.
-5. Evoluir para Fase 2 (cartões).
+1. Consolidar comprometimento futuro do cartão.
+2. Mostrar limite usado e disponível.
+3. Dashboard financeiro MVP.
+4. Filtros e consultas inteligentes.
+5. KPIs de saldo/fluxo.
 
 Notas
 - Não implementar Open Finance agora.
