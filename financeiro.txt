@@ -1,0 +1,93 @@
+Financeiro - acompanhamento do projeto
+
+Última atualização: 2026-06-10
+
+Objetivo
+- Construir um sistema financeiro completo para uso pessoal e do estúdio, com estrutura preparada para evolução futura.
+- Começar pelo MVP manual, bem organizado e fácil de manter.
+- Deixar a arquitetura pronta para Open Finance no futuro, sem implementar agora.
+
+Status atual
+- Login, cadastro e sessão funcionando.
+- Instâncias por usuário funcionando.
+- Conta conjunta via membros e convites funcionando.
+- Interface base com visual moderno e responsivo funcionando.
+- Correção de URLs para operar em /financeiro concluída.
+
+O que já existe
+- Autenticação básica.
+- Dashboard inicial.
+- Criação de instância.
+- Gestão de membros.
+- Convite por token.
+- Aceite de convite.
+- Tema visual compartilhado.
+- Webhook de sincronização com GitHub.
+
+Fase 1 - Banco de dados base
+- [ ] Criar ou revisar todas as tabelas financeiras base.
+- [ ] Inserir centros financeiros iniciais.
+- [ ] Inserir categorias iniciais e subcategorias.
+- [ ] Criar contas financeiras.
+- [ ] Criar lançamentos financeiros.
+- [ ] Criar recorrências.
+- [ ] Criar orçamentos.
+- [ ] Criar metas.
+- [ ] Criar regras automáticas.
+
+Fase 2 - Cartão de crédito
+- [ ] Criar tabelas de cartões.
+- [ ] Criar compras e parcelas.
+- [ ] Criar faturas.
+- [ ] Calcular comprometimento futuro.
+
+Fase 3 - Telas principais
+- [ ] Dashboard financeiro completo.
+- [ ] Tela de lançamentos.
+- [ ] Tela de recorrências.
+- [ ] Tela de centros.
+- [ ] Tela de categorias.
+- [ ] Tela de contas.
+- [ ] Tela de cartões.
+- [ ] Tela de orçamentos.
+- [ ] Tela de metas.
+- [ ] Tela de fluxo de caixa.
+- [ ] Tela de calendário financeiro.
+- [ ] Relatórios.
+- [ ] DRE simples do estúdio.
+
+Fase 4 - Recursos inteligentes
+- [ ] Tela de insights.
+- [ ] Simulador de decisão.
+- [ ] Regras automáticas de categorização.
+
+Fase 5 - Integração com CRM/estúdio
+- [ ] Receita prevista por agendamento.
+- [ ] Sinal e restante por sessão.
+- [ ] Relatórios de serviços.
+- [ ] Relatórios de marketing.
+
+Fase 6 - Preparação para Open Finance futura
+- [ ] Tabelas de provedores.
+- [ ] Contas externas.
+- [ ] Transações importadas.
+- [ ] Tela de conciliação.
+
+Fase 7 - Segurança
+- [ ] Regras de permissão por usuário e instância.
+- [ ] Proteção de dados sensíveis.
+- [ ] Logging seguro.
+- [ ] Preparar trilha de auditoria nas alterações importantes.
+
+Prioridade imediata
+1. Banco de dados base.
+2. Centros e categorias.
+3. Contas e lançamentos.
+4. Recorrências.
+5. Dashboard financeiro MVP.
+
+Notas
+- Não implementar Open Finance agora.
+- Não construir tudo de uma vez.
+- Avançar por blocos pequenos e funcionais.
+- Manter compatibilidade com a base atual do sistema.
