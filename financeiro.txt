@@ -13,7 +13,7 @@ Status atual
 - Conta conjunta via membros e convites funcionando.
 - Interface base com visual moderno e responsivo funcionando.
 - Correção de URLs para operar em /financeiro concluída.
-- Fase 1 do banco de dados iniciada.
+- Fase 1 do banco de dados concluída.
 
 O que já existe
 - Autenticação básica.
@@ -29,13 +29,13 @@ Fase 1 - Banco de dados base
 - [x] Criar ou revisar todas as tabelas financeiras base.
 - [x] Inserir centros financeiros iniciais.
 - [x] Inserir categorias iniciais.
-- [ ] Inserir subcategorias financeiras detalhadas.
-- [ ] Criar contas financeiras.
-- [ ] Criar lançamentos financeiros.
-- [ ] Criar recorrências.
-- [ ] Criar orçamentos.
-- [ ] Criar metas.
-- [ ] Criar regras automáticas.
+- [x] Inserir subcategorias financeiras detalhadas.
+- [x] Criar contas financeiras.
+- [x] Criar lançamentos financeiros.
+- [x] Criar recorrências.
+- [x] Criar orçamentos.
+- [x] Criar metas.
+- [x] Criar regras automáticas.
 
 Fase 2 - Cartão de crédito
 - [ ] Criar tabelas de cartões.
@@ -82,11 +82,11 @@ Fase 7 - Segurança
 - [ ] Preparar trilha de auditoria nas alterações importantes.
 
 Prioridade imediata
-1. Subcategorias detalhadas.
-2. Contas financeiras.
-3. Lançamentos financeiros.
-4. Recorrências.
-5. Dashboard financeiro MVP.
+1. Dashboard financeiro MVP.
+2. Filtros e consultas inteligentes.
+3. KPIs de saldo/fluxo.
+4. Relatório mensal.
+5. Evoluir para Fase 2 (cartões).
 
 Notas
 - Não implementar Open Finance agora.

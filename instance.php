@@ -92,6 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </div>
 
+  <div class="card enter">
+    <h2>Base financeira da instância</h2>
+    <p class="muted">Aqui você entra na área da Fase 1 com centros, categorias, contas, lançamentos, recorrências, orçamentos, metas e regras automáticas.</p>
+    <a class="btn btn-primary" href="<?= e(base_path('financial.php?instance_id=' . $instanceId)) ?>">Abrir área financeira</a>
+  </div>
+
   <?php if ($message): ?><div class="toast good"><?= e($message) ?></div><?php endif; ?>
   <?php if ($error): ?><div class="toast bad"><?= e($error) ?></div><?php endif; ?>
 

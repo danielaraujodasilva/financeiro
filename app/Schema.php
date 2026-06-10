@@ -216,6 +216,7 @@ SQL);
     {
         self::insertDefaultCenters($pdo, $instanceId);
         self::insertDefaultCategories($pdo, $instanceId);
+        self::insertDefaultSubcategories($pdo, $instanceId);
     }
 
     private static function seedFinancialBase(PDO $pdo): void
@@ -314,6 +315,51 @@ SQL);
                 $check->execute([$instanceId, $name, $type]);
                 if (!$check->fetchColumn()) {
                     $stmt->execute([$instanceId, $name, $type, $now, $now]);
+                }
+            }
+        }
+    }
+
+    private static function insertDefaultSubcategories(PDO $pdo, int $instanceId): void
+    {
+        $now = date('Y-m-d H:i:s');
+        $pairs = [
+            'income' => [
+                'Tattoo' => ['Sessão', 'Sinal', 'Arte personalizada'],
+                'Investimentos' => ['Rendimento', 'Dividendos'],
+                'Outros' => ['Extra', 'Reversão'],
+            ],
+            'expense' => [
+                'Moradia' => ['Casa', 'Família'],
+                'Estúdio' => ['Aluguel interno', 'Utilidades'],
+                'Marketing' => ['Meta Ads', 'Google Ads', 'Design'],
+                'Carro' => ['Combustível', 'Manutenção'],
+                'Material tattoo' => ['Tinta', 'Agulhas', 'Biqueiras'],
+                'Impostos' => ['Simples Nacional', 'MEI', 'Taxas'],
+                'Cartão' => ['Fatura', 'Anuidade', 'Juros'],
+                'Dívidas' => ['Parcelas', 'Empréstimos'],
+                'Delivery' => ['iFood', 'Uber Eats'],
+                'Lazer' => ['Passeio', 'Streaming'],
+                'Assinaturas' => ['Software', 'Serviços online'],
+            ],
+        ];
+
+        $findParent = $pdo->prepare('SELECT id FROM financial_categories WHERE instance_id = ? AND name = ? AND type = ? AND parent_id IS NULL LIMIT 1');
+        $check = $pdo->prepare('SELECT 1 FROM financial_categories WHERE instance_id = ? AND name = ? AND type = ? AND parent_id = ? LIMIT 1');
+        $insert = $pdo->prepare('INSERT INTO financial_categories (instance_id, name, type, parent_id, active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)');
+
+        foreach ($pairs as $type => $parents) {
+            foreach ($parents as $parentName => $children) {
+                $findParent->execute([$instanceId, $parentName, $type]);
+                $parentId = (int) $findParent->fetchColumn();
+                if (!$parentId) {
+                    continue;
+                }
+                foreach ($children as $childName) {
+                    $check->execute([$instanceId, $childName, $type, $parentId]);
+                    if (!$check->fetchColumn()) {
+                        $insert->execute([$instanceId, $childName, $type, $parentId, $now, $now]);
+                    }
                 }
             }
         }
