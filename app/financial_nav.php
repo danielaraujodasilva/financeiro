@@ -30,15 +30,20 @@ function financial_nav(int $instanceId, string $current = ''): void
         'openfinance' => ['Open Finance', base_path('open-finance.php?instance_id=' . $instanceId)],
         'audit' => ['Auditoria', base_path('audit.php?instance_id=' . $instanceId)],
     ];
-    echo '<div class="card enter" style="margin-bottom:16px"><div class="actions">';
+    echo '<div class="card enter mb-3"><div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">';
+    echo '<ul class="nav nav-pills flex-wrap gap-2">';
     foreach ($core as $key => [$label, $href]) {
-        $class = $key === $current ? 'btn btn-primary' : 'btn btn-secondary';
-        echo '<a class="' . $class . '" href="' . e($href) . '">' . e($label) . '</a>';
+        $active = $key === $current ? ' active' : '';
+        echo '<li class="nav-item"><a class="nav-link' . $active . '" href="' . e($href) . '">' . e($label) . '</a></li>';
     }
-    echo '</div><details style="margin-top:14px"><summary class="tag" style="cursor:pointer">Ferramentas avançadas</summary><div class="actions" style="margin-top:12px">';
+    echo '</ul>';
+    echo '<div class="dropdown">';
+    echo '<button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Ferramentas avançadas</button>';
+    echo '<ul class="dropdown-menu dropdown-menu-end p-2" style="min-width:320px;max-height:70vh;overflow:auto">';
     foreach ($advanced as $key => [$label, $href]) {
-        $class = $key === $current ? 'btn btn-primary' : 'btn btn-secondary';
-        echo '<a class="' . $class . '" href="' . e($href) . '">' . e($label) . '</a>';
+        $active = $key === $current ? ' active' : '';
+        echo '<li><a class="dropdown-item rounded ' . trim($active) . '" href="' . e($href) . '">' . e($label) . '</a></li>';
     }
-    echo '</div></div>';
+    echo '</ul>';
+    echo '</div></div></div>';
 }

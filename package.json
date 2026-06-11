@@ -1,0 +1,23 @@
+{
+  "name": "financeiro",
+  "version": "1.0.0",
+  "description": "Base inicial do sistema financeiro com:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielaraujodasilva/financeiro.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/danielaraujodasilva/financeiro/issues"
+  },
+  "homepage": "https://github.com/danielaraujodasilva/financeiro#readme",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}
