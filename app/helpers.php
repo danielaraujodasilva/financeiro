@@ -24,3 +24,11 @@ function base_path(string $path = ''): string
 
     return $basePath . '/' . ltrim($path, '/');
 }
+
+function bootstrap_assets(): string
+{
+    return <<<HTML
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+HTML;
+}

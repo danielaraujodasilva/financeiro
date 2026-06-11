@@ -117,6 +117,7 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard - Financeiro</title>
+<?= bootstrap_assets() ?>
 <link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
 <body>
@@ -138,8 +139,9 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
   <div class="card hero enter">
     <div class="split">
       <div>
-        <h2>Seu centro de comando financeiro</h2>
-        <p class="muted">Cada instância fica isolada, com acesso controlado por membros e convites. O painel já cruza entradas, saídas, faturas, reserva e risco do mês.</p>
+        <div class="tag">Modo básico primeiro</div>
+        <h2>Seu centro de comando financeiro, sem complicação</h2>
+        <p class="muted">O sistema mostra primeiro o essencial: saldo, risco, entradas e saídas. As ferramentas mais avançadas continuam disponíveis, mas ficam organizadas em camadas para não assustar ninguém.</p>
       </div>
       <div>
         <div class="tag">Risco geral: <?= e($overallRisk) ?></div>
@@ -147,9 +149,14 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
           <div class="stat"><span class="muted">Saldo atual</span><strong>R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></strong></div>
           <div class="stat"><span class="muted">Projetado</span><strong>R$ <?= number_format($overall['projected'], 2, ',', '.') ?></strong></div>
           <div class="stat"><span class="muted">Reserva</span><strong>R$ <?= number_format($overall['reserve'], 2, ',', '.') ?></strong></div>
-        </div>
       </div>
     </div>
+    <div class="actions" style="margin-top:16px">
+      <a class="btn btn-primary" href="<?= e(base_path('transactions.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Novo lançamento</a>
+      <a class="btn btn-secondary" href="<?= e(base_path('cards.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Cartões</a>
+      <a class="btn btn-secondary" href="<?= e(base_path('financial.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Ver base</a>
+    </div>
+  </div>
     <div class="statbar">
       <div class="stat"><span class="muted">Instâncias</span><strong><?= count($instances) ?></strong></div>
       <div class="stat"><span class="muted">Convites pendentes</span><strong><?= count($auth->pendingInvitesForEmail($user['email'])) ?></strong></div>
@@ -159,15 +166,23 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
 
   <div class="grid">
     <div class="card enter">
-      <h2>Visão do mês</h2>
+      <h2>Resumo rápido</h2>
       <div class="statbar">
-        <div class="stat"><span class="muted">Entradas recebidas</span><strong>R$ <?= number_format($overall['income_received'], 2, ',', '.') ?></strong></div>
-        <div class="stat"><span class="muted">Entradas previstas</span><strong>R$ <?= number_format($overall['income_planned'], 2, ',', '.') ?></strong></div>
-        <div class="stat"><span class="muted">Saídas pagas</span><strong>R$ <?= number_format($overall['expense_paid'], 2, ',', '.') ?></strong></div>
-        <div class="stat"><span class="muted">Saídas previstas</span><strong>R$ <?= number_format($overall['expense_planned'], 2, ',', '.') ?></strong></div>
-        <div class="stat"><span class="muted">Vencido</span><strong>R$ <?= number_format($overall['overdue_amount'], 2, ',', '.') ?></strong></div>
-        <div class="stat"><span class="muted">Faturas abertas</span><strong>R$ <?= number_format($overall['open_bills'], 2, ',', '.') ?></strong></div>
+        <div class="stat"><span class="muted">Entradas</span><strong>R$ <?= number_format($overall['income_received'] + $overall['income_planned'], 2, ',', '.') ?></strong></div>
+        <div class="stat"><span class="muted">Saídas</span><strong>R$ <?= number_format($overall['expense_paid'] + $overall['expense_planned'], 2, ',', '.') ?></strong></div>
+        <div class="stat"><span class="muted">Saldo projetado</span><strong>R$ <?= number_format($overall['projected'], 2, ',', '.') ?></strong></div>
       </div>
+      <details style="margin-top:14px">
+        <summary class="tag" style="cursor:pointer">Ver detalhamento mensal</summary>
+        <div class="statbar" style="margin-top:14px">
+          <div class="stat"><span class="muted">Entradas recebidas</span><strong>R$ <?= number_format($overall['income_received'], 2, ',', '.') ?></strong></div>
+          <div class="stat"><span class="muted">Entradas previstas</span><strong>R$ <?= number_format($overall['income_planned'], 2, ',', '.') ?></strong></div>
+          <div class="stat"><span class="muted">Saídas pagas</span><strong>R$ <?= number_format($overall['expense_paid'], 2, ',', '.') ?></strong></div>
+          <div class="stat"><span class="muted">Saídas previstas</span><strong>R$ <?= number_format($overall['expense_planned'], 2, ',', '.') ?></strong></div>
+          <div class="stat"><span class="muted">Vencido</span><strong>R$ <?= number_format($overall['overdue_amount'], 2, ',', '.') ?></strong></div>
+          <div class="stat"><span class="muted">Faturas abertas</span><strong>R$ <?= number_format($overall['open_bills'], 2, ',', '.') ?></strong></div>
+        </div>
+      </details>
     </div>
 
     <div class="card enter">
@@ -177,7 +192,7 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
           <div class="member">
             <div class="meta">
               <strong><?= e($instance['name']) ?></strong>
-              <span class="muted">Função: <?= e($instance['role']) ?> · Risco: <?= e($instance['risk']) ?> · Slug: <?= e($instance['slug']) ?></span>
+              <span class="muted">Função: <?= e($instance['role']) ?> · Risco: <?= e($instance['risk']) ?></span>
             </div>
             <div class="actions">
               <a class="btn btn-secondary" href="<?= e(base_path('instance.php?id=' . (int) $instance['id'])) ?>">Abrir</a>
@@ -190,26 +205,26 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
         <?php endif; ?>
       </div>
     </div>
+  </div>
 
-    <div class="card enter">
-      <h2>Convites pendentes</h2>
-      <?php $invites = $auth->pendingInvitesForEmail($user['email']); ?>
-      <?php if (!$invites): ?>
-        <p class="muted">Nenhum convite pendente.</p>
-      <?php else: ?>
-        <div class="list">
-          <?php foreach ($invites as $invite): ?>
-            <div class="member">
-              <div class="meta">
-                <strong><?= e($invite['instance_name']) ?></strong>
-                <span class="muted">Convite em aberto</span>
-              </div>
-              <a class="btn btn-good" href="<?= e(base_path('accept-invite.php?token=' . $invite['token'])) ?>">Aceitar</a>
+  <div class="card enter">
+    <h2>Convites pendentes</h2>
+    <?php $invites = $auth->pendingInvitesForEmail($user['email']); ?>
+    <?php if (!$invites): ?>
+      <p class="muted">Nenhum convite pendente.</p>
+    <?php else: ?>
+      <div class="list">
+        <?php foreach ($invites as $invite): ?>
+          <div class="member">
+            <div class="meta">
+              <strong><?= e($invite['instance_name']) ?></strong>
+              <span class="muted">Convite em aberto</span>
             </div>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
-    </div>
+            <a class="btn btn-good" href="<?= e(base_path('accept-invite.php?token=' . $invite['token'])) ?>">Aceitar</a>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
   </div>
 </div>
 </body>

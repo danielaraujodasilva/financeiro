@@ -16,6 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ((int)($_POST['center_id'] ?? 0) === 0) throw new RuntimeException('Centro obrigatório.');
             $stmt = $pdo->prepare('INSERT INTO financial_transactions (instance_id, transaction_date, due_date, paid_date, description, amount, type, status, account_id, destination_account_id, center_id, category_id, payment_method, responsible_person, client_id, lead_id, appointment_id, notes, source, external_provider, external_account_id, external_transaction_id, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             $stmt->execute([$instanceId, $_POST['transaction_date'], $_POST['due_date'] ?: null, $_POST['paid_date'] ?: null, trim($_POST['description']), (float)$_POST['amount'], $_POST['type'], $_POST['status'], (int)$_POST['account_id'], null, (int)$_POST['center_id'], (int)$_POST['category_id'], $_POST['payment_method'], null, null, null, null, trim($_POST['notes'] ?? ''), 'manual', null, null, null, 'not_synced', date('Y-m-d H:i:s'), date('Y-m-d H:i:s')]);
+            $audit->log($instanceId, $auth->userId(), 'financial_transaction_create', 'financial_transactions', (string) $pdo->lastInsertId(), [], [
+                'description' => trim($_POST['description']),
+                'amount' => (float) $_POST['amount'],
+                'type' => $_POST['type'],
+                'status' => $_POST['status'],
+            ]);
             $message = 'Lançamento criado.';
         }
     } catch (Throwable $e) { $error = $e->getMessage(); }

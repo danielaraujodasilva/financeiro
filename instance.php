@@ -30,23 +30,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('Informe um email.');
             }
             $auth->createInviteForUser($instanceId, $email, $userId);
+            $audit->log($instanceId, $userId, 'invite_create', 'invite', null, [], ['email' => $email]);
             $message = 'Convite criado com sucesso.';
         } elseif ($action === 'role' && $canManage) {
             $targetUserId = (int) ($_POST['target_user_id'] ?? 0);
             $role = (string) ($_POST['role'] ?? 'member');
             $auth->updateMemberRole($instanceId, $targetUserId, $role, $userId);
+            $audit->log($instanceId, $userId, 'member_role_update', 'instance_member', (string) $targetUserId, [], ['role' => $role]);
             $message = 'Função atualizada.';
         } elseif ($action === 'remove' && $canManage) {
             $targetUserId = (int) ($_POST['target_user_id'] ?? 0);
             $auth->removeMember($instanceId, $targetUserId, $userId);
+            $audit->log($instanceId, $userId, 'member_remove', 'instance_member', (string) $targetUserId);
             $message = 'Membro removido.';
         } elseif ($action === 'resend' && $canManage) {
             $inviteId = (int) ($_POST['invite_id'] ?? 0);
             $auth->resendInvite($inviteId, $userId);
+            $audit->log($instanceId, $userId, 'invite_resend', 'invite', (string) $inviteId);
             $message = 'Convite reenviado.';
         } elseif ($action === 'delete_invite' && $canManage) {
             $inviteId = (int) ($_POST['invite_id'] ?? 0);
             $auth->deleteInviteById($inviteId, $userId);
+            $audit->log($instanceId, $userId, 'invite_delete', 'invite', (string) $inviteId);
             $message = 'Convite removido.';
         }
     } catch (Throwable $e) {
@@ -60,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($instance['name']) ?> - Financeiro</title>
+<?= bootstrap_assets() ?>
 <link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
 <body>

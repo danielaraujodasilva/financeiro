@@ -17,7 +17,7 @@ Status atual
 - Fase 2 do cartão de crédito concluída.
 - Fase 3 concluída com dashboard e telas principais.
 - Fase 4 concluída com insights, simulador e regras smart.
-- Fase 5 iniciada com integração opcional de CRM/estúdio.
+- Fase 5 concluída com integração opcional de CRM/estúdio.
 
 O que já existe
 - Autenticação básica.
@@ -48,7 +48,7 @@ Fase 2 - Cartão de crédito
 - [x] Calcular comprometimento futuro.
 - [x] Consolidar visão de limite usado e disponível.
 - [x] Consolidar projeção das próximas faturas.
-- [ ] Melhorar edição/remoção de cartões e compras.
+- [x] Melhorar edição/remoção de cartões e compras.
 
 Fase 3 - Telas principais
 - [x] Dashboard financeiro completo.
@@ -77,27 +77,26 @@ Fase 5 - Integração com CRM/estúdio
 - [x] Sinal e restante por sessão.
 - [x] Relatórios de serviços.
 - [x] Relatórios de marketing.
-- [ ] Vínculo automático opcional com CRM externo.
-- [ ] Importação futura de agenda/leads reais.
+- [x] Vínculo automático opcional com CRM externo.
+- [x] Importação automática opcional de agenda real do CRM local.
+- [x] Importação automática opcional de leads reais do CRM.
 
 Fase 6 - Preparação para Open Finance futura
-- [ ] Tabelas de provedores.
-- [ ] Contas externas.
-- [ ] Transações importadas.
-- [ ] Tela de conciliação.
+- [x] Tabelas de provedores.
+- [x] Contas externas.
+- [x] Transações importadas.
+- [x] Tela de conciliação.
 
 Fase 7 - Segurança
-- [ ] Regras de permissão por usuário e instância.
-- [ ] Proteção de dados sensíveis.
-- [ ] Logging seguro.
-- [ ] Preparar trilha de auditoria nas alterações importantes.
+- [x] Regras de permissão por usuário e instância.
+- [x] Proteção de dados sensíveis.
+- [x] Logging seguro.
+- [x] Preparar trilha de auditoria nas alterações importantes.
 
 Prioridade imediata
 1. Melhorar edição/remoção nas telas.
-2. Vínculo automático opcional com CRM externo.
-3. Importação futura de agenda/leads reais.
-4. Refinar relatórios.
-5. Preparar conciliação futura.
+2. Refinar relatórios.
+3. Evoluir integrações reais de Open Finance quando houver provedor.
 
 Notas
 - Não implementar Open Finance agora.

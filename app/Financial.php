@@ -97,4 +97,52 @@ final class Financial
         $stmt->execute([$instanceId]);
         return $stmt->fetchAll();
     }
+
+    public function externalProviders(int $instanceId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM financial_external_providers WHERE instance_id = ? ORDER BY id DESC');
+        $stmt->execute([$instanceId]);
+        return $stmt->fetchAll();
+    }
+
+    public function externalAccounts(int $instanceId): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT a.*, p.name AS provider_name, p.slug AS provider_slug
+            FROM financial_external_accounts a
+            INNER JOIN financial_external_providers p ON p.id = a.provider_id
+            WHERE a.instance_id = ?
+            ORDER BY a.id DESC
+        ');
+        $stmt->execute([$instanceId]);
+        return $stmt->fetchAll();
+    }
+
+    public function externalTransactions(int $instanceId): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT t.*, p.name AS provider_name, a.account_name, a.linked_account_id
+            FROM financial_external_transactions t
+            INNER JOIN financial_external_providers p ON p.id = t.provider_id
+            INNER JOIN financial_external_accounts a ON a.id = t.external_account_id
+            WHERE t.instance_id = ?
+            ORDER BY t.transaction_date DESC, t.id DESC
+        ');
+        $stmt->execute([$instanceId]);
+        return $stmt->fetchAll();
+    }
+
+    public function reconciliations(int $instanceId): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT r.*, p.name AS provider_name, a.account_name
+            FROM financial_reconciliations r
+            INNER JOIN financial_external_providers p ON p.id = r.provider_id
+            INNER JOIN financial_external_accounts a ON a.id = r.external_account_id
+            WHERE r.instance_id = ?
+            ORDER BY r.reconciliation_date DESC, r.id DESC
+        ');
+        $stmt->execute([$instanceId]);
+        return $stmt->fetchAll();
+    }
 }

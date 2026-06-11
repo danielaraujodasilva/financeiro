@@ -89,6 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     dt_now(),
                     dt_now()
                 ]);
+                $audit->log($instanceId, $userId, 'financial_transaction_create', 'financial_transactions', (string) $pdo->lastInsertId(), [], [
+                    'description' => trim((string) post_value('description')),
+                    'amount' => (float) post_value('amount', 0),
+                    'type' => trim((string) post_value('type', 'expense')),
+                    'status' => trim((string) post_value('status', 'planned')),
+                ]);
                 $message = 'Lançamento criado.';
                 break;
             case 'create_recurring':
@@ -164,6 +170,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     post_value('card_due_day') === '' ? null : (int) post_value('card_due_day'),
                     dt_now(), dt_now()
                 ]);
+                $audit->log($instanceId, $userId, 'financial_card_create', 'credit_cards', (string) $pdo->lastInsertId(), [], [
+                    'name' => trim((string) post_value('card_name')),
+                    'credit_limit' => (float) post_value('card_credit_limit', 0),
+                ]);
                 $message = 'Cartão criado.';
                 break;
             case 'create_card_purchase':
@@ -187,6 +197,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     dt_now(), dt_now()
                 ]);
                 $purchaseId = (int) $pdo->lastInsertId();
+                $audit->log($instanceId, $userId, 'financial_card_purchase_create', 'credit_card_purchases', (string) $purchaseId, [], [
+                    'description' => trim((string) post_value('purchase_description')),
+                    'total_amount' => $totalAmount,
+                    'installments_count' => $installments,
+                ]);
                 $installmentAmount = round($totalAmount / $installments, 2);
 
                 $cardStmt = $pdo->prepare('SELECT closing_day, due_day FROM credit_cards WHERE id = ? AND instance_id = ?');
@@ -277,6 +292,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Financeiro Base - <?= e($instance['name']) ?></title>
+<?= bootstrap_assets() ?>
 <link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
 <body>
@@ -297,9 +313,21 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
   <?php if ($message): ?><div class="toast good"><?= e($message) ?></div><?php endif; ?>
   <?php if ($error): ?><div class="toast bad"><?= e($error) ?></div><?php endif; ?>
 
+  <div class="card enter">
+    <h2>Modo básico</h2>
+    <p class="muted">Se você só quiser operar o essencial, use os lançamentos, cartões e visão rápida. O restante fica em áreas recolhíveis abaixo.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="<?= e(base_path('transactions.php?instance_id=' . $instanceId)) ?>">Criar lançamento</a>
+      <a class="btn btn-secondary" href="<?= e(base_path('cards.php?instance_id=' . $instanceId)) ?>">Ver cartões</a>
+      <a class="btn btn-secondary" href="<?= e(base_path('dashboard.php')) ?>">Voltar ao dashboard</a>
+    </div>
+  </div>
+
   <div class="grid">
     <div class="card enter">
-      <h2>Centros</h2>
+      <details open>
+        <summary class="tag" style="cursor:pointer">Centros e categorias</summary>
+        <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_center">
         <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
@@ -321,10 +349,14 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
           <div class="member"><div class="meta"><strong><?= e($center['name']) ?></strong><span class="muted"><?= e($center['type']) ?></span></div><span class="tag"><?= $center['active'] ? 'ativo' : 'inativo' ?></span></div>
         <?php endforeach; ?>
       </div>
+        </div>
+      </details>
     </div>
 
     <div class="card enter">
-      <h2>Categorias</h2>
+      <details open>
+        <summary class="tag" style="cursor:pointer">Contas e lançamentos</summary>
+        <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_category">
         <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
@@ -351,12 +383,16 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
           <div class="member"><div class="meta"><strong><?= e($category['name']) ?></strong><span class="muted"><?= e($category['type']) ?><?= $category['parent_id'] ? ' · subcategoria' : '' ?></span></div><span class="tag"><?= $category['active'] ? 'ativo' : 'inativo' ?></span></div>
         <?php endforeach; ?>
       </div>
+        </div>
+      </details>
     </div>
   </div>
 
   <div class="grid">
     <div class="card enter">
-      <h2>Contas</h2>
+      <details>
+        <summary class="tag" style="cursor:pointer">Contas</summary>
+        <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_account">
         <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
@@ -383,10 +419,14 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
           <div class="member"><div class="meta"><strong><?= e($account['name']) ?></strong><span class="muted"><?= e($account['type']) ?><?= $account['bank_name'] ? ' · ' . e($account['bank_name']) : '' ?></span></div><span class="tag">R$ <?= number_format((float) $account['current_balance'], 2, ',', '.') ?></span></div>
         <?php endforeach; ?>
       </div>
+        </div>
+      </details>
     </div>
 
     <div class="card enter">
-      <h2>Lançamentos</h2>
+      <details open>
+        <summary class="tag" style="cursor:pointer">Lançamentos</summary>
+        <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_transaction">
         <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
@@ -450,12 +490,16 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
           <div class="member"><div class="meta"><strong><?= e($transaction['description']) ?></strong><span class="muted"><?= e($transaction['transaction_date']) ?> · <?= e($transaction['status']) ?> · <?= e($transaction['type']) ?></span></div><span class="tag">R$ <?= number_format((float) $transaction['amount'], 2, ',', '.') ?></span></div>
         <?php endforeach; ?>
       </div>
+        </div>
+      </details>
     </div>
   </div>
 
   <div class="grid">
     <div class="card enter">
-      <h2>Recorrências</h2>
+      <details>
+        <summary class="tag" style="cursor:pointer">Recorrências e metas</summary>
+        <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_recurring">
         <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
@@ -492,10 +536,14 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
           <div class="member"><div class="meta"><strong><?= e($item['description']) ?></strong><span class="muted"><?= e($item['frequency']) ?> · <?= e($item['type']) ?></span></div><span class="tag">R$ <?= number_format((float) $item['amount'], 2, ',', '.') ?></span></div>
         <?php endforeach; ?>
       </div>
+        </div>
+      </details>
     </div>
 
     <div class="card enter">
-      <h2>Orçamentos, metas e regras</h2>
+      <details>
+        <summary class="tag" style="cursor:pointer">Orçamentos, metas e regras</summary>
+        <div style="margin-top:14px">
       <div class="split">
         <form method="post">
           <input type="hidden" name="action" value="create_budget">
@@ -562,12 +610,16 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
           <div class="member"><div class="meta"><strong><?= e($rule['match_text']) ?></strong><span class="muted"><?= e($rule['match_type']) ?> · <?= e((string) $rule['transaction_type']) ?></span></div><span class="tag">regra</span></div>
         <?php endforeach; ?>
       </div>
+        </div>
+      </details>
     </div>
   </div>
 
   <div class="grid">
     <div class="card enter">
-      <h2>Cartões de crédito</h2>
+      <details>
+        <summary class="tag" style="cursor:pointer">Cartões de crédito</summary>
+        <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_card">
         <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
@@ -597,10 +649,14 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
         <?php endforeach; ?>
         <?php if (!$cards): ?><p class="muted">Nenhum cartão cadastrado ainda.</p><?php endif; ?>
       </div>
+        </div>
+      </details>
     </div>
 
     <div class="card enter">
-      <h2>Compra parcelada</h2>
+      <details>
+        <summary class="tag" style="cursor:pointer">Compra parcelada</summary>
+        <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_card_purchase">
         <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
@@ -644,11 +700,15 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
         <?php endforeach; ?>
         <?php if (!$cardPurchases): ?><p class="muted">Sem compras registradas.</p><?php endif; ?>
       </div>
+        </div>
+      </details>
     </div>
   </div>
 
   <div class="card enter">
-    <h2>Faturas do cartão</h2>
+    <details>
+      <summary class="tag" style="cursor:pointer">Faturas do cartão</summary>
+      <div style="margin-top:14px">
     <div class="list">
       <?php foreach ($cardBills as $bill): ?>
         <div class="member">
@@ -661,6 +721,8 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
       <?php endforeach; ?>
       <?php if (!$cardBills): ?><p class="muted">Nenhuma fatura gerada ainda.</p><?php endif; ?>
     </div>
+      </div>
+    </details>
   </div>
 
   <div class="grid">

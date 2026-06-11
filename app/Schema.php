@@ -319,6 +319,118 @@ CREATE TABLE IF NOT EXISTS financial_marketing_reports (
     updated_at TEXT NOT NULL,
     FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS financial_integrations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    provider TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    config_json TEXT NOT NULL DEFAULT '{}',
+    last_sync_at TEXT NULL,
+    last_sync_status TEXT NOT NULL DEFAULT 'never',
+    last_sync_message TEXT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(instance_id, provider),
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS financial_external_providers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    provider_type TEXT NOT NULL DEFAULT 'openfinance',
+    status TEXT NOT NULL DEFAULT 'draft',
+    environment TEXT NOT NULL DEFAULT 'sandbox',
+    consent_reference TEXT NULL,
+    last_sync_at TEXT NULL,
+    last_sync_status TEXT NOT NULL DEFAULT 'never',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(instance_id, slug),
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS financial_external_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    provider_id INTEGER NOT NULL,
+    external_account_id TEXT NOT NULL,
+    account_name TEXT NOT NULL,
+    account_type TEXT NOT NULL DEFAULT 'checking',
+    institution_name TEXT NULL,
+    branch_code TEXT NULL,
+    account_number TEXT NULL,
+    currency TEXT NOT NULL DEFAULT 'BRL',
+    balance REAL NOT NULL DEFAULT 0,
+    last_sync_at TEXT NULL,
+    last_sync_status TEXT NOT NULL DEFAULT 'never',
+    linked_account_id INTEGER NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(provider_id, external_account_id),
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE,
+    FOREIGN KEY (provider_id) REFERENCES financial_external_providers(id) ON DELETE CASCADE,
+    FOREIGN KEY (linked_account_id) REFERENCES financial_accounts(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS financial_external_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    provider_id INTEGER NOT NULL,
+    external_account_id INTEGER NOT NULL,
+    external_transaction_id TEXT NOT NULL,
+    transaction_date TEXT NOT NULL,
+    description TEXT NOT NULL,
+    amount REAL NOT NULL,
+    direction TEXT NOT NULL DEFAULT 'debit',
+    status TEXT NOT NULL DEFAULT 'imported',
+    category_hint TEXT NULL,
+    matched_transaction_id INTEGER NULL,
+    reconciliation_status TEXT NOT NULL DEFAULT 'pending',
+    raw_payload_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(provider_id, external_transaction_id),
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE,
+    FOREIGN KEY (provider_id) REFERENCES financial_external_providers(id) ON DELETE CASCADE,
+    FOREIGN KEY (external_account_id) REFERENCES financial_external_accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY (matched_transaction_id) REFERENCES financial_transactions(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS financial_reconciliations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NOT NULL,
+    provider_id INTEGER NOT NULL,
+    external_account_id INTEGER NOT NULL,
+    reconciliation_date TEXT NOT NULL,
+    opened_count INTEGER NOT NULL DEFAULT 0,
+    matched_count INTEGER NOT NULL DEFAULT 0,
+    unmatched_count INTEGER NOT NULL DEFAULT 0,
+    notes TEXT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE,
+    FOREIGN KEY (provider_id) REFERENCES financial_external_providers(id) ON DELETE CASCADE,
+    FOREIGN KEY (external_account_id) REFERENCES financial_external_accounts(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id INTEGER NULL,
+    user_id INTEGER NULL,
+    action TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NULL,
+    before_json TEXT NULL,
+    after_json TEXT NULL,
+    ip_address TEXT NULL,
+    user_agent TEXT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
 SQL);
 
         self::ensureInviteColumns($pdo);

@@ -14,6 +14,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if($action==='create'){
             $stmt=$pdo->prepare('INSERT INTO financial_rules (instance_id, match_text, match_type, transaction_type, center_id, category_id, account_id, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)');
             $stmt->execute([$instanceId, trim($_POST['match_text']), $_POST['match_type'], $_POST['transaction_type']?:null, (int)$_POST['center_id'], (int)$_POST['category_id'], $_POST['account_id']?:null, date('Y-m-d H:i:s'), date('Y-m-d H:i:s')]);
+            $audit->log($instanceId, $auth->userId(), 'financial_rule_create', 'financial_rules', (string) $pdo->lastInsertId(), [], [
+                'match_text' => trim($_POST['match_text']),
+                'match_type' => $_POST['match_type'],
+            ]);
             $message='Regra criada.';
         }
         if($action==='apply'){
@@ -35,6 +39,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
                 elseif($rule['match_type']==='regex') $ok = @preg_match('/'.$rule['match_text'].'/i',$tx['description']) === 1;
                 if($ok) $upd->execute([(int)$rule['center_id'], (int)$rule['category_id'], $rule['account_id'] ?: null, date('Y-m-d H:i:s'), (int)$tx['id']]);
             }
+            $audit->log($instanceId, $auth->userId(), 'financial_rule_apply', 'financial_rules', (string) $ruleId, [], ['applied' => true]);
             $message='Regra aplicada aos lançamentos existentes.';
         }
     }catch(Throwable $e){$error=$e->getMessage();}
