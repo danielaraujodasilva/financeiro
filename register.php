@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $userId = $auth->register(trim($_POST['name'] ?? ''), trim($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''));
         $_SESSION['user_id'] = $userId;
-        header('Location: ' . base_path('dashboard.php'));
+        header('Location: ' . base_path('instance-create.php'));
         exit;
     } catch (Throwable $e) {
         $error = $e->getMessage();

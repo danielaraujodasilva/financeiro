@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$instanceId, $userId]);
 
             $pdo->commit();
-            header('Location: ' . base_path('dashboard.php'));
+            header('Location: ' . base_path('financial.php?instance_id=' . $instanceId));
             exit;
         } catch (Throwable $e) {
             $pdo->rollBack();

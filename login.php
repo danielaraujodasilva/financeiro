@@ -4,7 +4,13 @@ require __DIR__ . '/bootstrap.php';
 $error = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($auth->login(trim($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''))) {
-        header('Location: ' . base_path('dashboard.php'));
+        $userId = $auth->userId();
+        $instances = $userId ? $auth->instancesForUser($userId) : [];
+        if (count($instances) === 1) {
+            header('Location: ' . base_path('financial.php?instance_id=' . (int) $instances[0]['id']));
+        } else {
+            header('Location: ' . base_path('dashboard.php'));
+        }
         exit;
     }
     $error = 'Email ou senha inválidos.';

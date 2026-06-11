@@ -5,6 +5,12 @@ $userId = $auth->requireLogin();
 $user = $auth->currentUser();
 $instances = $auth->instancesForUser($userId);
 $interfaceMode = $auth->interfaceMode($userId);
+$forceDashboard = (string) ($_GET['view'] ?? '') === 'chooser';
+
+if (!$forceDashboard && count($instances) === 1 && (string) ($_GET['add'] ?? '') !== '1') {
+    header('Location: ' . base_path('financial.php?instance_id=' . (int) $instances[0]['id']));
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'set_mode') {
     $auth->setInterfaceMode($userId, (string) ($_POST['mode'] ?? 'simple'));

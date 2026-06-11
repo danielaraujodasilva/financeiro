@@ -24,7 +24,8 @@ try {
 <body>
 <?php if ($message): ?>
   <p><?= e($message) ?></p>
-  <p><a href="<?= e(base_path('dashboard.php')) ?>">Ir para o dashboard</a></p>
+  <?php $instances = $auth->instancesForUser($userId); $target = count($instances) === 1 ? base_path('financial.php?instance_id=' . (int) $instances[0]['id']) : base_path('dashboard.php'); ?>
+  <p><a href="<?= e($target) ?>">Continuar</a></p>
 <?php else: ?>
   <p><?= e($error ?? 'Falha ao processar convite.') ?></p>
   <p><a href="<?= e(base_path('dashboard.php')) ?>">Voltar</a></p>
