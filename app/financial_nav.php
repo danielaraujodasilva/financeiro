@@ -14,6 +14,7 @@ function financial_nav(int $instanceId, string $current = ''): void
         'finance' => ['Configurações', base_path('financial.php?instance_id=' . $instanceId)],
         'cashflow' => ['Fluxo de caixa', base_path('cashflow.php?instance_id=' . $instanceId)],
         'insights' => ['Insights', base_path('insights.php?instance_id=' . $instanceId)],
+        'content' => ['Conteúdo', base_path('conteudo.php?instance_id=' . $instanceId)],
         'recurring' => ['Contas fixas', base_path('recurring.php?instance_id=' . $instanceId)],
         'centers' => ['Áreas', base_path('centers.php?instance_id=' . $instanceId)],
         'categories' => ['Tipos de gasto', base_path('categories.php?instance_id=' . $instanceId)],
@@ -54,6 +55,7 @@ function financial_nav(int $instanceId, string $current = ''): void
         'add' => ['Adicionar', base_path('dashboard.php?add=1')],
         'transactions' => ['Lançamentos', base_path('transactions.php?instance_id=' . $instanceId)],
         'cards' => ['Cartões', base_path('cards.php?instance_id=' . $instanceId)],
+        'content' => ['Conteúdo', base_path('conteudo.php?instance_id=' . $instanceId)],
         'more' => ['Mais', base_path('financial.php?instance_id=' . $instanceId)],
     ];
 

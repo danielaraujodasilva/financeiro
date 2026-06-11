@@ -500,11 +500,11 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
             <div class="row g-2">
               <?php
               $advancedLinks = [
-                ['label' => 'Fluxo de caixa', 'href' => base_path('cashflow.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
-                ['label' => 'Orçamentos', 'href' => base_path('budgets.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
-                ['label' => 'Metas', 'href' => base_path('goals.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
-                ['label' => 'Planejamento', 'href' => base_path('calendar.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
-                ['label' => 'Importar dados', 'href' => base_path('open-finance.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+              ['label' => 'Fluxo de caixa', 'href' => base_path('cashflow.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+              ['label' => 'Orçamentos', 'href' => base_path('budgets.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+              ['label' => 'Metas', 'href' => base_path('goals.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+              ['label' => 'Planejamento', 'href' => base_path('calendar.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+                ['label' => 'Conteúdo', 'href' => base_path('conteudo.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
               ];
               foreach ($advancedLinks as $link):
               ?>
