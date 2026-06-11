@@ -344,7 +344,25 @@ final class CrmBridge
     {
         $row = $this->integrationRow($instanceId);
         $config = json_decode((string) ($row['config_json'] ?? '{}'), true);
-        return is_array($config) ? $config : [];
+        $config = is_array($config) ? $config : [];
+
+        if (trim((string) ($config['base_url'] ?? '')) === '') {
+            $config['base_url'] = $this->defaultCrmBaseUrl();
+        }
+
+        if (trim((string) ($config['token'] ?? '')) === '') {
+            $config['token'] = $this->defaultCrmToken();
+        }
+
+        if (trim((string) ($config['appointments_endpoint'] ?? '')) === '') {
+            $config['appointments_endpoint'] = '/api/finance_bridge.php?resource=appointments';
+        }
+
+        if (trim((string) ($config['transactions_endpoint'] ?? '')) === '') {
+            $config['transactions_endpoint'] = '/api/finance_bridge.php?resource=transactions';
+        }
+
+        return $config;
     }
 
     private function fetchApiList(int $instanceId, array $config, string $resource): ?array
@@ -453,5 +471,53 @@ final class CrmBridge
         ];
 
         return $this->crmConfig;
+    }
+
+    private function defaultCrmBaseUrl(): string
+    {
+        $candidates = [
+            'http://localhost/projetocrm',
+            'http://127.0.0.1/projetocrm',
+            'http://localhost/site/projetocrm',
+            'http://127.0.0.1/site/projetocrm',
+        ];
+
+        foreach ($candidates as $baseUrl) {
+            $checkUrl = rtrim($baseUrl, '/') . '/api/finance_bridge.php?resource=summary';
+            $ctx = stream_context_create(['http' => ['method' => 'GET', 'timeout' => 3]]);
+            $body = @file_get_contents($checkUrl, false, $ctx);
+            if (is_string($body) && $body !== '') {
+                $decoded = json_decode($body, true);
+                if (is_array($decoded) && !empty($decoded['ok'])) {
+                    return $baseUrl;
+                }
+            }
+        }
+
+        return 'http://localhost/projetocrm';
+    }
+
+    private function defaultCrmToken(): string
+    {
+        $candidates = [
+            'C:\\xampp\\htdocs\\site\\projetocrm\\deploy.local.php',
+            dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'projetocrm' . DIRECTORY_SEPARATOR . 'deploy.local.php',
+        ];
+
+        foreach ($candidates as $file) {
+            if (!is_file($file)) {
+                continue;
+            }
+
+            $loaded = require $file;
+            if (is_array($loaded)) {
+                $secret = trim((string) ($loaded['secret'] ?? ''));
+                if ($secret !== '') {
+                    return $secret;
+                }
+            }
+        }
+
+        return '';
     }
 }

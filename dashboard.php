@@ -7,6 +7,27 @@ $instances = $auth->instancesForUser($userId);
 $interfaceMode = $auth->interfaceMode($userId);
 $forceDashboard = (string) ($_GET['view'] ?? '') === 'chooser';
 
+foreach ($instances as $inst) {
+    $integration = $crmBridge->integrationRow((int) $inst['id']);
+    $config = json_decode((string) ($integration['config_json'] ?? '{}'), true);
+    $mode = is_array($config) ? (string) ($config['mode'] ?? 'auto-local') : 'auto-local';
+    if ((int) ($integration['enabled'] ?? 0) !== 1 || $mode !== 'api') {
+        continue;
+    }
+
+    $lastSyncAt = strtotime((string) ($integration['last_sync_at'] ?? ''));
+    if ($lastSyncAt !== false && $lastSyncAt > (time() - 1200)) {
+        continue;
+    }
+
+    try {
+        $crmBridge->syncAppointments((int) $inst['id']);
+        $crmBridge->syncTransactions((int) $inst['id']);
+    } catch (Throwable) {
+        // Mantemos o dashboard carregando mesmo se o CRM estiver momentaneamente fora.
+    }
+}
+
 $monthOptionsStmt = $pdo->prepare('
     SELECT DISTINCT substr(transaction_date, 1, 7) AS month_key
     FROM financial_transactions
