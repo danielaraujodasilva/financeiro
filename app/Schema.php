@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
+    interface_mode TEXT NOT NULL DEFAULT 'simple',
     created_at TEXT NOT NULL
 );
 
@@ -444,6 +445,12 @@ SQL);
 
         if (!in_array('accepted_at', $names, true)) {
             $pdo->exec('ALTER TABLE invites ADD COLUMN accepted_at TEXT NULL');
+        }
+
+        $userColumns = $pdo->query('PRAGMA table_info(users)')->fetchAll(PDO::FETCH_ASSOC);
+        $userNames = array_column($userColumns, 'name');
+        if (!in_array('interface_mode', $userNames, true)) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN interface_mode TEXT NOT NULL DEFAULT 'simple'");
         }
     }
 

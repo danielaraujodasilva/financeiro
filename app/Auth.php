@@ -15,14 +15,14 @@ final class Auth
             throw new RuntimeException('Email já cadastrado.');
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO users (name, email, password_hash, created_at) VALUES (?, ?, ?, datetime("now"))');
+        $stmt = $this->pdo->prepare('INSERT INTO users (name, email, password_hash, interface_mode, created_at) VALUES (?, ?, ?, "simple", datetime("now"))');
         $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
         return (int) $this->pdo->lastInsertId();
     }
 
     public function login(string $email, string $password): bool
     {
-        $stmt = $this->pdo->prepare('SELECT id, password_hash FROM users WHERE email = ?');
+        $stmt = $this->pdo->prepare('SELECT id, password_hash, interface_mode FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $user = $stmt->fetch();
         if (!$user || !password_verify($password, $user['password_hash'])) {
@@ -30,6 +30,7 @@ final class Auth
         }
 
         $_SESSION['user_id'] = (int) $user['id'];
+        $_SESSION['interface_mode'] = (string) ($user['interface_mode'] ?? 'simple');
         return true;
     }
 
@@ -45,11 +46,31 @@ final class Auth
             return null;
         }
 
-        $stmt = $this->pdo->prepare('SELECT id, name, email, created_at FROM users WHERE id = ?');
+        $stmt = $this->pdo->prepare('SELECT id, name, email, interface_mode, created_at FROM users WHERE id = ?');
         $stmt->execute([$id]);
         $user = $stmt->fetch();
 
         return $user ?: null;
+    }
+
+    public function interfaceMode(int $userId): string
+    {
+        $stmt = $this->pdo->prepare('SELECT interface_mode FROM users WHERE id = ?');
+        $stmt->execute([$userId]);
+        $mode = (string) $stmt->fetchColumn();
+        return in_array($mode, ['simple', 'advanced'], true) ? $mode : 'simple';
+    }
+
+    public function setInterfaceMode(int $userId, string $mode): void
+    {
+        if (!in_array($mode, ['simple', 'advanced'], true)) {
+            throw new RuntimeException('Modo de interface inválido.');
+        }
+        $stmt = $this->pdo->prepare('UPDATE users SET interface_mode = ? WHERE id = ?');
+        $stmt->execute([$mode, $userId]);
+        if (isset($_SESSION['user_id']) && (int) $_SESSION['user_id'] === $userId) {
+            $_SESSION['interface_mode'] = $mode;
+        }
     }
 
     public function hasInstanceAccess(int $userId, int $instanceId): bool

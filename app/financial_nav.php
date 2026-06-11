@@ -43,6 +43,9 @@ function financial_nav(int $instanceId, string $current = ''): void
     echo '<button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">' . ($mode === 'simple' ? 'Mais' : 'Ferramentas avançadas') . '</button>';
     echo '<ul class="dropdown-menu dropdown-menu-end p-2" style="min-width:320px;max-height:70vh;overflow:auto">';
     foreach ($advanced as $key => [$label, $href]) {
+        if ($mode === 'simple' && in_array($key, ['finance','recurring','centers','categories','accounts','budgets','goals','calendar','dre','simulator','smart_rules','appointments','services','marketing','crm','openfinance','audit'], true)) {
+            // keep advanced menu available but grouped under the dropdown
+        }
         $active = $key === $current ? ' active' : '';
         echo '<li><a class="dropdown-item rounded ' . trim($active) . '" href="' . e($href) . '">' . e($label) . '</a></li>';
     }

@@ -4,6 +4,13 @@ require __DIR__ . '/bootstrap.php';
 $userId = $auth->requireLogin();
 $user = $auth->currentUser();
 $instances = $auth->instancesForUser($userId);
+$interfaceMode = $auth->interfaceMode($userId);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'set_mode') {
+    $auth->setInterfaceMode($userId, (string) ($_POST['mode'] ?? 'simple'));
+    header('Location: ' . base_path('dashboard.php'));
+    exit;
+}
 
 $today = date('Y-m-d');
 $monthStart = date('Y-m-01');
@@ -162,6 +169,14 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
       <a class="btn btn-primary" href="<?= e(base_path('transactions.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Novo lançamento</a>
       <a class="btn btn-secondary" href="<?= e(base_path('cards.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Cartões</a>
       <a class="btn btn-secondary" href="<?= e(base_path('financial.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Ver base</a>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
+      <form method="post" class="d-flex gap-2 align-items-center">
+        <input type="hidden" name="action" value="set_mode">
+        <button class="btn <?= $interfaceMode === 'simple' ? 'btn-primary' : 'btn-secondary' ?>" name="mode" value="simple" type="submit">Modo simples</button>
+        <button class="btn <?= $interfaceMode === 'advanced' ? 'btn-primary' : 'btn-secondary' ?>" name="mode" value="advanced" type="submit">Modo avançado</button>
+      </form>
+      <span class="tag">Padrão atual: <?= e(ucfirst($interfaceMode)) ?></span>
     </div>
   </div>
     <div class="statbar">

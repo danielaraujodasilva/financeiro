@@ -266,9 +266,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="wrap">
   <?php financial_nav($instanceId, 'openfinance'); ?>
   <div class="card hero">
-    <div class="tag">Fase 6 · base preparada</div>
+    <div class="tag">Open Finance · base preparada</div>
     <h1 class="headline">Open Finance, sem pressa e sem quebrar o que já funciona</h1>
-    <p class="muted">Aqui a gente prepara provedores, contas externas, importação de extratos e conciliação. Ainda não depende de banco real: você já consegue testar com JSON manual e depois plugar integrações de verdade sem refazer a estrutura.</p>
+    <p class="muted">Aqui a gente prepara provedores, contas externas, importação de extratos e conciliação. A estrutura já aguenta evolução real sem obrigar ninguém a começar com banco conectado.</p>
     <?php if ($message): ?><div class="toast good"><?= e($message) ?></div><?php endif; ?>
     <?php if ($error): ?><div class="toast bad"><?= e($error) ?></div><?php endif; ?>
     <div class="actions" style="margin-top:14px">
@@ -414,7 +414,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <div class="card enter" id="conciliacao">
     <details open>
-      <summary class="tag" style="cursor:pointer">Conciliação</summary>
+      <summary class="tag" style="cursor:pointer">Conciliação inteligente</summary>
       <div style="margin-top:14px">
     <form method="post" class="split">
       <input type="hidden" name="action" value="run_reconciliation">

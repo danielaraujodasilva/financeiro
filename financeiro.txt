@@ -540,7 +540,7 @@ Progresso da simplificação
 - [x] Labels mais humanas na interface.
 - [x] Botão "+ Adicionar" com modal rápido no dashboard.
 - [x] Lançamentos viraram lista simples com filtros.
-- [ ] Remover/transformar a página "Configurações" em centro de manutenção mais limpo.
-- [ ] Melhorar ainda mais Cartões e Open Finance em fluxo visual.
+- [x] Remover/transformar a página "Configurações" em centro de manutenção mais limpo.
+- [x] Melhorar ainda mais Cartões e Open Finance em fluxo visual.
 - [ ] Criar botão flutuante de adicionar no mobile.
 - [ ] Implementar preferência simple/advanced por usuário.

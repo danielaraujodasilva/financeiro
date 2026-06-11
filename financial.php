@@ -291,7 +291,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Financeiro Base - <?= e($instance['name']) ?></title>
+<title>Configurações financeiras - <?= e($instance['name']) ?></title>
 <?= bootstrap_assets() ?>
 <link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
@@ -301,7 +301,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
     <div class="brand">
       <div class="mark"></div>
       <div>
-        <div class="tag">Fase 1 · Base financeira</div>
+        <div class="tag">Configurações · manutenção avançada</div>
         <h1 class="headline"><?= e($instance['name']) ?></h1>
       </div>
     </div>
@@ -315,18 +315,18 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
 
   <div class="card enter">
     <h2>Modo básico</h2>
-    <p class="muted">Se você só quiser operar o essencial, use os lançamentos, cartões e visão rápida. O restante fica em áreas recolhíveis abaixo.</p>
+    <p class="muted">Se você só quiser operar o essencial, use os lançamentos, cartões e visão rápida. O restante fica organizado em blocos avançados abaixo.</p>
     <div class="actions">
       <a class="btn btn-primary" href="<?= e(base_path('transactions.php?instance_id=' . $instanceId)) ?>">Criar lançamento</a>
       <a class="btn btn-secondary" href="<?= e(base_path('cards.php?instance_id=' . $instanceId)) ?>">Ver cartões</a>
-      <a class="btn btn-secondary" href="<?= e(base_path('dashboard.php')) ?>">Voltar ao dashboard</a>
-    </div>
+        <a class="btn btn-secondary" href="<?= e(base_path('dashboard.php')) ?>">Voltar ao início</a>
+      </div>
   </div>
 
   <div class="card enter">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
       <div>
-        <h2 class="mb-1">Comece por aqui</h2>
+        <h2 class="mb-1">Acesso rápido</h2>
         <p class="muted mb-0">Abra só o que precisa. O restante continua disponível abaixo.</p>
       </div>
       <div class="actions">
@@ -339,7 +339,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
   <div class="grid">
     <div class="card enter">
       <details>
-        <summary class="tag" style="cursor:pointer">Centros e categorias</summary>
+        <summary class="tag" style="cursor:pointer">Áreas e tipos</summary>
         <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_center">
@@ -355,7 +355,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
             <option value="project">project</option>
           </select>
         </label>
-        <button class="btn btn-primary" type="submit">Criar centro</button>
+        <button class="btn btn-primary" type="submit">Criar área</button>
       </form>
       <div class="list">
         <?php foreach ($centers as $center): ?>
@@ -368,7 +368,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
 
     <div class="card enter">
       <details>
-        <summary class="tag" style="cursor:pointer">Contas e lançamentos</summary>
+        <summary class="tag" style="cursor:pointer">Tipos de gasto e entrada</summary>
         <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_category">
@@ -389,7 +389,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
             <?php endforeach; ?>
           </select>
         </label>
-        <button class="btn btn-primary" type="submit">Criar categoria</button>
+        <button class="btn btn-primary" type="submit">Criar tipo</button>
       </form>
       <div class="list">
         <?php foreach ($categories as $category): ?>
@@ -450,18 +450,18 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
         <label>Valor<input type="number" step="0.01" name="amount" required></label>
         <label>Tipo
           <select name="type">
-            <option value="income">income</option>
-            <option value="expense">expense</option>
-            <option value="transfer">transfer</option>
+            <option value="income">entrada</option>
+            <option value="expense">gasto</option>
+            <option value="transfer">transferência</option>
           </select>
         </label>
         <label>Status
           <select name="status">
-            <option value="planned">planned</option>
-            <option value="pending">pending</option>
-            <option value="paid">paid</option>
-            <option value="overdue">overdue</option>
-            <option value="canceled">canceled</option>
+            <option value="planned">previsto</option>
+            <option value="pending">pendente</option>
+            <option value="paid">pago</option>
+            <option value="overdue">vencido</option>
+            <option value="canceled">cancelado</option>
           </select>
         </label>
         <label>Conta
@@ -519,10 +519,10 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
         <label>Descrição<input type="text" name="description" required></label>
         <label>Valor<input type="number" step="0.01" name="amount" required></label>
         <label>Tipo
-          <select name="type"><option value="income">income</option><option value="expense">expense</option><option value="transfer">transfer</option></select>
+            <select name="type"><option value="income">entrada</option><option value="expense">gasto</option><option value="transfer">transferência</option></select>
         </label>
         <label>Frequência
-          <select name="frequency"><option value="weekly">weekly</option><option value="monthly">monthly</option><option value="yearly">yearly</option></select>
+          <select name="frequency"><option value="weekly">semanal</option><option value="monthly">mensal</option><option value="yearly">anual</option></select>
         </label>
         <label>Vencimento do mês<input type="number" name="due_day" min="1" max="31"></label>
         <label>Início<input type="date" name="start_date" value="<?= date('Y-m-d') ?>"></label>
@@ -555,7 +555,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
 
     <div class="card enter">
       <details>
-        <summary class="tag" style="cursor:pointer">Orçamentos, metas e regras</summary>
+        <summary class="tag" style="cursor:pointer">Orçamentos, metas e automações</summary>
         <div style="margin-top:14px">
       <div class="split">
         <form method="post">

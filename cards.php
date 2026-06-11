@@ -316,7 +316,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
   <?php financial_nav($instanceId,'cards'); ?>
   <div class="card hero">
     <h1 class="headline">Cartões</h1>
-    <p class="muted">Agora você consegue editar e remover cartões e compras sem bagunçar a projeção das faturas.</p>
+    <p class="muted">Aqui o foco é simples: criar, ajustar e acompanhar cartões e compras sem misturar a tela com coisa demais.</p>
     <?php if ($message): ?><div class="toast good"><?= e($message) ?></div><?php endif; ?>
     <?php if ($error): ?><div class="toast bad"><?= e($error) ?></div><?php endif; ?>
     <div class="actions" style="margin-top:14px">
@@ -402,7 +402,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
 
     <div class="card" id="compras">
       <details>
-        <summary class="tag" style="cursor:pointer">Compras</summary>
+        <summary class="tag" style="cursor:pointer">Compras no cartão</summary>
         <div style="margin-top:14px">
       <form method="post" class="split">
         <input type="hidden" name="action" value="create_card_purchase">
@@ -493,7 +493,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
 
   <div class="card" id="faturas">
     <details>
-      <summary class="tag" style="cursor:pointer">Faturas do cartão</summary>
+        <summary class="tag" style="cursor:pointer">Faturas do cartão</summary>
       <div style="margin-top:14px">
     <div class="list">
       <?php foreach ($bills as $bill): ?>
