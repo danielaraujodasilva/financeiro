@@ -61,42 +61,48 @@ final class CrmBridge
             return ['ok' => false, 'message' => 'Integração CRM desativada.', 'imported' => 0, 'updated' => 0];
         }
 
-        $crm = $this->crm();
-        if (!$crm) {
-            return ['ok' => false, 'message' => 'CRM local não configurado ou indisponível.', 'imported' => 0, 'updated' => 0];
-        }
-
-        $rows = [];
-        foreach ([
-            [
-                'table' => 'leads',
-                'prefix' => 'lead:',
-                'sql' => 'SELECT id, nome, telefone, interesse, valor, status, etapa_funil, data_ultimo_contato, created_at FROM leads ORDER BY id DESC LIMIT 150',
-            ],
-            [
-                'table' => 'crm_whatsapp_clientes',
-                'prefix' => 'whatsapp:',
-                'sql' => 'SELECT id, nome, numero, interesse, valor, status, etapa, data_ultimo_contato, created_at FROM crm_whatsapp_clientes ORDER BY id DESC LIMIT 150',
-            ],
-        ] as $source) {
-            try {
-                $sourceRows = $crm->query($source['sql'])->fetchAll();
-            } catch (Throwable) {
-                $sourceRows = [];
+        $config = $this->integrationConfig($instanceId);
+        if (($config['mode'] ?? 'auto-local') === 'api') {
+            $rows = $this->fetchApiList($instanceId, $config, 'appointments');
+            if ($rows === null) {
+                return ['ok' => false, 'message' => 'API do CRM indisponível.', 'imported' => 0, 'updated' => 0];
+            }
+        } else {
+            $crm = $this->crm();
+            if (!$crm) {
+                return ['ok' => false, 'message' => 'CRM local não configurado ou indisponível.', 'imported' => 0, 'updated' => 0];
             }
 
-            foreach ($sourceRows as $row) {
-                $rows[] = [
-                    'external_appointment_id' => $source['prefix'] . $row['id'],
-                    'client_name' => $row['nome'] ?? '',
-                    'client_phone' => $row['telefone'] ?? ($row['numero'] ?? ''),
-                    'service_name' => $row['interesse'] ?? 'CRM',
-                    'expected_amount' => $row['valor'] ?? 0,
-                    'lead_status' => $row['status'] ?? '',
-                    'etapa_funil' => $row['etapa_funil'] ?? ($row['etapa'] ?? ''),
-                    'data_ultimo_contato' => $row['data_ultimo_contato'] ?? null,
-                    'created_at' => $row['created_at'] ?? null,
-                ];
+            $rows = [];
+            foreach ([
+                [
+                    'prefix' => 'lead:',
+                    'sql' => 'SELECT id, nome, telefone, interesse, valor, status, etapa_funil, data_ultimo_contato, created_at FROM leads ORDER BY id DESC LIMIT 150',
+                ],
+                [
+                    'prefix' => 'whatsapp:',
+                    'sql' => 'SELECT id, nome, numero, interesse, valor, status, etapa, data_ultimo_contato, created_at FROM crm_whatsapp_clientes ORDER BY id DESC LIMIT 150',
+                ],
+            ] as $source) {
+                try {
+                    $sourceRows = $crm->query($source['sql'])->fetchAll();
+                } catch (Throwable) {
+                    $sourceRows = [];
+                }
+
+                foreach ($sourceRows as $row) {
+                    $rows[] = [
+                        'external_appointment_id' => $source['prefix'] . $row['id'],
+                        'client_name' => $row['nome'] ?? '',
+                        'client_phone' => $row['telefone'] ?? ($row['numero'] ?? ''),
+                        'service_name' => $row['interesse'] ?? 'CRM',
+                        'expected_amount' => $row['valor'] ?? 0,
+                        'lead_status' => $row['status'] ?? '',
+                        'etapa_funil' => $row['etapa_funil'] ?? ($row['etapa'] ?? ''),
+                        'data_ultimo_contato' => $row['data_ultimo_contato'] ?? null,
+                        'created_at' => $row['created_at'] ?? null,
+                    ];
+                }
             }
         }
 
@@ -183,8 +189,113 @@ final class CrmBridge
         ];
     }
 
+    public function syncTransactions(int $instanceId): array
+    {
+        if (!$this->isEnabled($instanceId)) {
+            return ['ok' => false, 'message' => 'Integração CRM desativada.', 'imported' => 0, 'updated' => 0];
+        }
+
+        $config = $this->integrationConfig($instanceId);
+        if (($config['mode'] ?? 'auto-local') !== 'api') {
+            return ['ok' => true, 'message' => 'Modo API não habilitado.', 'imported' => 0, 'updated' => 0];
+        }
+
+        $rows = $this->fetchApiList($instanceId, $config, 'transactions');
+        if ($rows === null) {
+            return ['ok' => false, 'message' => 'API do CRM indisponível.', 'imported' => 0, 'updated' => 0];
+        }
+
+        $accountId = (int) ($this->financePdo->query('SELECT id FROM financial_accounts WHERE instance_id = ' . (int) $instanceId . ' ORDER BY id ASC LIMIT 1')->fetchColumn() ?: 0);
+        $centerId = (int) ($this->financePdo->query('SELECT id FROM financial_centers WHERE instance_id = ' . (int) $instanceId . ' ORDER BY id ASC LIMIT 1')->fetchColumn() ?: 0);
+        $categoryId = (int) ($this->financePdo->query('SELECT id FROM financial_categories WHERE instance_id = ' . (int) $instanceId . ' ORDER BY id ASC LIMIT 1')->fetchColumn() ?: 0);
+        $now = date('Y-m-d H:i:s');
+
+        $find = $this->financePdo->prepare('SELECT id FROM financial_transactions WHERE instance_id = ? AND external_provider = ? AND external_transaction_id = ? LIMIT 1');
+        $update = $this->financePdo->prepare('UPDATE financial_transactions SET transaction_date = ?, due_date = ?, paid_date = ?, description = ?, amount = ?, type = ?, status = ?, account_id = ?, center_id = ?, category_id = ?, payment_method = ?, notes = ?, sync_status = ?, updated_at = ? WHERE id = ?');
+        $insert = $this->financePdo->prepare('INSERT INTO financial_transactions (instance_id, transaction_date, due_date, paid_date, description, amount, type, status, account_id, destination_account_id, center_id, category_id, payment_method, responsible_person, client_id, lead_id, appointment_id, notes, source, external_provider, external_account_id, external_transaction_id, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?, ?, ?, ?, ?, ?, ?)');
+
+        $imported = 0;
+        $updated = 0;
+
+        foreach ($rows as $row) {
+            $externalId = (string) ($row['external_transaction_id'] ?? $row['id'] ?? '');
+            if ($externalId === '') {
+                continue;
+            }
+
+            $transactionDate = (string) ($row['transaction_date'] ?? $row['date'] ?? date('Y-m-d'));
+            $dueDate = (string) ($row['due_date'] ?? $transactionDate);
+            $paidDate = (string) ($row['paid_date'] ?? '');
+            $description = trim((string) ($row['description'] ?? $row['name'] ?? 'Movimento CRM'));
+            $amount = (float) ($row['amount'] ?? 0);
+            $type = (string) ($row['type'] ?? (($amount < 0) ? 'expense' : 'income'));
+            $status = (string) ($row['status'] ?? 'planned');
+            $paymentMethod = (string) ($row['payment_method'] ?? 'crm');
+            $notes = trim((string) ($row['notes'] ?? 'Sincronizado via API do CRM'));
+
+            $find->execute([$instanceId, 'crm-api', $externalId]);
+            $existingId = (int) $find->fetchColumn();
+
+            if ($existingId > 0) {
+                $update->execute([
+                    $transactionDate,
+                    $dueDate,
+                    $paidDate !== '' ? $paidDate : null,
+                    $description,
+                    $amount,
+                    $type,
+                    $status,
+                    $accountId ?: 1,
+                    $centerId ?: 1,
+                    $categoryId ?: 1,
+                    $paymentMethod,
+                    $notes,
+                    'synced',
+                    $now,
+                    $existingId,
+                ]);
+                $updated++;
+                continue;
+            }
+
+            $insert->execute([
+                $instanceId,
+                $transactionDate,
+                $dueDate,
+                $paidDate !== '' ? $paidDate : ($status === 'paid' ? $transactionDate : null),
+                $description,
+                $amount,
+                $type,
+                $status,
+                $accountId ?: 1,
+                $centerId ?: 1,
+                $categoryId ?: 1,
+                $paymentMethod,
+                null,
+                json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'crm',
+                'crm-api',
+                (string) ($row['external_account_id'] ?? 'api'),
+                $externalId,
+                'synced',
+                $now,
+                $now,
+            ]);
+            $imported++;
+        }
+
+        $this->touchIntegration($instanceId, true, sprintf('Transações API sincronizadas: %d importadas, %d atualizadas.', $imported, $updated));
+
+        return ['ok' => true, 'message' => sprintf('Transações sincronizadas: %d importadas, %d atualizadas.', $imported, $updated), 'imported' => $imported, 'updated' => $updated];
+    }
+
     public function probe(): array
     {
+        $config = $this->integrationConfig(0);
+        if (($config['mode'] ?? 'auto-local') === 'api') {
+            return ['ok' => true, 'message' => 'Integração configurada em modo API.'];
+        }
+
         $crm = $this->crm();
         if (!$crm) {
             return ['ok' => false, 'message' => 'CRM local indisponível ou sem credenciais.'];
@@ -227,6 +338,58 @@ final class CrmBridge
             str_contains($status, 'reuni') => 'confirmed',
             default => 'planned',
         };
+    }
+
+    private function integrationConfig(int $instanceId): array
+    {
+        $row = $this->integrationRow($instanceId);
+        $config = json_decode((string) ($row['config_json'] ?? '{}'), true);
+        return is_array($config) ? $config : [];
+    }
+
+    private function fetchApiList(int $instanceId, array $config, string $resource): ?array
+    {
+        $baseUrl = trim((string) ($config['base_url'] ?? ''));
+        $endpoint = trim((string) ($config[$resource . '_endpoint'] ?? ''));
+        if ($baseUrl === '' || $endpoint === '') {
+            return null;
+        }
+
+        $url = rtrim($baseUrl, '/') . '/' . ltrim($endpoint, '/');
+        $query = http_build_query([
+            'instance_id' => $instanceId,
+            'since' => $config['since'] ?? null,
+        ]);
+        $url .= (str_contains($url, '?') ? '&' : '?') . $query;
+
+        $headers = ['Accept: application/json'];
+        $token = trim((string) ($config['token'] ?? ''));
+        if ($token !== '') {
+            $headers[] = 'Authorization: Bearer ' . $token;
+        }
+
+        $ctx = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => implode("\r\n", $headers),
+                'timeout' => 20,
+            ],
+        ]);
+        $body = @file_get_contents($url, false, $ctx);
+        if ($body === false || $body === '') {
+            return null;
+        }
+
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        if (isset($decoded['data']) && is_array($decoded['data'])) {
+            return $decoded['data'];
+        }
+
+        return array_is_list($decoded) ? $decoded : [];
     }
 
     private function crm(): ?PDO

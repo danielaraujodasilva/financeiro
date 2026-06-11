@@ -13,6 +13,12 @@ $probe = $crmBridge->probe();
 $message = $error = null;
 $integrationConfig = json_decode((string) ($integration['config_json'] ?? '{}'), true);
 $integrationNotes = is_array($integrationConfig) ? (string) ($integrationConfig['notes'] ?? '') : '';
+$integrationMode = is_array($integrationConfig) ? (string) ($integrationConfig['mode'] ?? 'auto-local') : 'auto-local';
+$baseUrl = is_array($integrationConfig) ? (string) ($integrationConfig['base_url'] ?? '') : '';
+$token = is_array($integrationConfig) ? (string) ($integrationConfig['token'] ?? '') : '';
+$appointmentsEndpoint = is_array($integrationConfig) ? (string) ($integrationConfig['appointments_endpoint'] ?? '/api/finance/appointments') : '/api/finance/appointments';
+$transactionsEndpoint = is_array($integrationConfig) ? (string) ($integrationConfig['transactions_endpoint'] ?? '/api/finance/transactions') : '/api/finance/transactions';
+$since = is_array($integrationConfig) ? (string) ($integrationConfig['since'] ?? '') : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
@@ -20,8 +26,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'save_settings') {
             $enabled = isset($_POST['enabled']) && $_POST['enabled'] === '1';
             $crmBridge->saveSettings($instanceId, $enabled, [
-                'mode' => 'auto-local',
+                'mode' => trim((string) ($_POST['mode'] ?? 'auto-local')),
                 'notes' => trim((string) ($_POST['notes'] ?? '')),
+                'base_url' => trim((string) ($_POST['base_url'] ?? '')),
+                'token' => trim((string) ($_POST['token'] ?? '')),
+                'appointments_endpoint' => trim((string) ($_POST['appointments_endpoint'] ?? '/api/finance/appointments')),
+                'transactions_endpoint' => trim((string) ($_POST['transactions_endpoint'] ?? '/api/finance/transactions')),
+                'since' => trim((string) ($_POST['since'] ?? '')),
             ]);
             $audit->log($instanceId, $auth->userId(), 'crm_integration_update', 'financial_integrations', null, [], [
                 'enabled' => $enabled,
@@ -36,6 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException((string) $result['message']);
             }
             $audit->log($instanceId, $auth->userId(), 'crm_integration_sync', 'financial_service_appointments', null, [], $result);
+            $message = (string) $result['message'];
+        } elseif ($action === 'sync_transactions') {
+            $result = $crmBridge->syncTransactions($instanceId);
+            $integration = $crmBridge->integrationRow($instanceId);
+            if (!($result['ok'] ?? false)) {
+                throw new RuntimeException((string) $result['message']);
+            }
+            $audit->log($instanceId, $auth->userId(), 'crm_integration_sync_transactions', 'financial_transactions', null, [], $result);
             $message = (string) $result['message'];
         }
     } catch (Throwable $e) {
@@ -81,31 +100,54 @@ $appointments = $financial->appointments($instanceId);
       <?php endif; ?>
     </div>
 
-    <div class="card enter">
-      <h2>Configuração opcional</h2>
-      <form method="post" class="split">
-        <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
-        <input type="hidden" name="action" value="save_settings">
-        <label>Integração
-          <select name="enabled">
-            <option value="0" <?= (int) ($integration['enabled'] ?? 0) !== 1 ? 'selected' : '' ?>>Desativada</option>
-            <option value="1" <?= (int) ($integration['enabled'] ?? 0) === 1 ? 'selected' : '' ?>>Ativada</option>
+      <div class="card enter">
+        <h2>Configuração opcional</h2>
+        <form method="post" class="split">
+          <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
+          <input type="hidden" name="action" value="save_settings">
+          <label>Integração
+            <select name="enabled">
+              <option value="0" <?= (int) ($integration['enabled'] ?? 0) !== 1 ? 'selected' : '' ?>>Desativada</option>
+              <option value="1" <?= (int) ($integration['enabled'] ?? 0) === 1 ? 'selected' : '' ?>>Ativada</option>
+            </select>
+          </label>
+          <label>Modo
+          <select name="mode">
+            <option value="auto-local" <?= $integrationMode === 'auto-local' ? 'selected' : '' ?>>Local automático</option>
+            <option value="api" <?= $integrationMode === 'api' ? 'selected' : '' ?>>API</option>
           </select>
-        </label>
-        <label>Modo
-          <input type="text" value="auto-local" readonly>
-        </label>
-        <label>Notas
-          <input type="text" name="notes" value="<?= e($integrationNotes) ?>">
-        </label>
-        <button class="btn btn-primary" type="submit">Salvar integração</button>
-      </form>
-      <form method="post" style="margin-top:16px">
-        <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
-        <input type="hidden" name="action" value="sync_now">
-        <button class="btn btn-secondary" type="submit">Sincronizar agora</button>
-      </form>
-    </div>
+          </label>
+          <label>API base URL
+            <input type="text" name="base_url" value="<?= e($baseUrl) ?>" placeholder="https://crm.exemplo.com">
+          </label>
+          <label>API token
+            <input type="password" name="token" value="<?= e($token) ?>" placeholder="Bearer token">
+          </label>
+          <label>Endpoint agendas
+            <input type="text" name="appointments_endpoint" value="<?= e($appointmentsEndpoint) ?>" placeholder="/api/finance/appointments">
+          </label>
+          <label>Endpoint movimentos
+            <input type="text" name="transactions_endpoint" value="<?= e($transactionsEndpoint) ?>" placeholder="/api/finance/transactions">
+          </label>
+          <label>Desde
+            <input type="date" name="since" value="<?= e($since) ?>">
+          </label>
+          <label>Notas
+            <input type="text" name="notes" value="<?= e($integrationNotes) ?>">
+          </label>
+          <button class="btn btn-primary" type="submit">Salvar integração</button>
+        </form>
+        <form method="post" style="margin-top:16px">
+          <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
+          <input type="hidden" name="action" value="sync_now">
+          <button class="btn btn-secondary" type="submit">Sincronizar agora</button>
+        </form>
+        <form method="post" style="margin-top:10px">
+          <input type="hidden" name="instance_id" value="<?= $instanceId ?>">
+          <input type="hidden" name="action" value="sync_transactions">
+          <button class="btn btn-secondary" type="submit">Sincronizar movimentos</button>
+        </form>
+      </div>
   </div>
 
   <div class="card enter">
