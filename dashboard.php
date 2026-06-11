@@ -7,6 +7,26 @@ $instances = $auth->instancesForUser($userId);
 $interfaceMode = $auth->interfaceMode($userId);
 $forceDashboard = (string) ($_GET['view'] ?? '') === 'chooser';
 
+$monthOptionsStmt = $pdo->prepare('
+    SELECT DISTINCT substr(transaction_date, 1, 7) AS month_key
+    FROM financial_transactions
+    WHERE instance_id IN (' . implode(',', array_fill(0, max(1, count($instances)), '?')) . ')
+    ORDER BY month_key DESC
+');
+$monthOptionParams = $instances ? array_map(fn($i) => (int) $i['id'], $instances) : [0];
+$monthOptionsStmt->execute($monthOptionParams);
+$availableMonths = array_column($monthOptionsStmt->fetchAll(PDO::FETCH_ASSOC), 'month_key');
+if (!$availableMonths) {
+    $availableMonths = [date('Y-m')];
+}
+
+$selectedMonth = (string) ($_GET['month'] ?? $availableMonths[0]);
+if (!preg_match('/^\d{4}-\d{2}$/', $selectedMonth) || !in_array($selectedMonth, $availableMonths, true)) {
+    $selectedMonth = $availableMonths[0];
+}
+$monthStart = $selectedMonth . '-01';
+$monthEnd = date('Y-m-t', strtotime($monthStart));
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'set_mode') {
     $auth->setInterfaceMode($userId, (string) ($_POST['mode'] ?? 'simple'));
     header('Location: ' . base_path('dashboard.php?view=chooser'));
@@ -14,8 +34,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'set_m
 }
 
 $today = date('Y-m-d');
-$monthStart = date('Y-m-01');
-$monthEnd = date('Y-m-t');
 $plus7 = date('Y-m-d', strtotime('+7 days'));
 
 function finance_instance_summary(PDO $pdo, int $instanceId, string $monthStart, string $monthEnd, string $today, string $plus7): array
@@ -129,6 +147,30 @@ if (!$recommendations) {
     $recommendations[] = ['title' => 'Nenhuma ação urgente', 'meta' => 'Continue acompanhando o resumo diário.', 'tone' => 'success'];
 }
 $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
+
+$graphStmt = $pdo->prepare('
+    SELECT
+        substr(transaction_date, 1, 10) AS day_key,
+        SUM(CASE WHEN type = "income" AND status = "paid" THEN amount ELSE 0 END) AS income_amount,
+        SUM(CASE WHEN type = "expense" AND status = "paid" THEN amount ELSE 0 END) AS expense_amount
+    FROM financial_transactions
+    WHERE instance_id IN (' . implode(',', array_fill(0, max(1, count($instances)), '?')) . ')
+      AND transaction_date BETWEEN ? AND ?
+    GROUP BY substr(transaction_date, 1, 10)
+    ORDER BY day_key ASC
+');
+$graphParams = $instances ? array_map(fn($i) => (int) $i['id'], $instances) : [0];
+$graphParams[] = $monthStart;
+$graphParams[] = $monthEnd;
+$graphStmt->execute($graphParams);
+$graphRows = $graphStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$monthLabelMap = [
+    '01' => 'Janeiro', '02' => 'Fevereiro', '03' => 'Março', '04' => 'Abril',
+    '05' => 'Maio', '06' => 'Junho', '07' => 'Julho', '08' => 'Agosto',
+    '09' => 'Setembro', '10' => 'Outubro', '11' => 'Novembro', '12' => 'Dezembro',
+];
+$selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . substr($selectedMonth, 0, 4);
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -259,11 +301,12 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         </div>
         <div class="d-flex flex-wrap gap-2">
           <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button">Maio de 2025</button>
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button"><?= e($selectedMonthLabel) ?></button>
             <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item active" href="#">Maio de 2025</a></li>
-              <li><a class="dropdown-item" href="#">Abril de 2025</a></li>
-              <li><a class="dropdown-item" href="#">Março de 2025</a></li>
+              <?php foreach ($availableMonths as $monthKey): ?>
+                <?php $label = $monthLabelMap[substr($monthKey, 5, 2)] . ' de ' . substr($monthKey, 0, 4); ?>
+                <li><a class="dropdown-item <?= $monthKey === $selectedMonth ? 'active' : '' ?>" href="<?= e(base_path('dashboard.php?month=' . $monthKey)) ?>"><?= e($label) ?></a></li>
+              <?php endforeach; ?>
             </ul>
           </div>
           <button class="btn btn-outline-secondary" type="button">Filtros</button>
@@ -297,7 +340,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
           <div class="col-12 col-xl-7">
             <div class="mb-2">
               <h2 class="fw-bold mb-2" style="font-size:clamp(1.4rem,1.8vw,2rem);">Você está indo muito bem!</h2>
-              <div class="text-body-secondary" style="font-size:1rem;">Continue assim para fechar o mês tranquilo.</div>
+              <div class="text-body-secondary" style="font-size:1rem;">Resumo de <?= e($selectedMonthLabel) ?> para você enxergar o mês com clareza.</div>
             </div>
             <div class="row g-2 mt-1">
               <div class="col-12 col-md-6">
@@ -305,7 +348,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
                   <div class="d-flex align-items-center gap-3">
                     <div class="mini-icon">R$</div>
                     <div>
-                      <div class="text-body-secondary small" style="font-size:.92rem;">Saldo disponível</div>
+                    <div class="text-body-secondary small" style="font-size:.92rem;">Saldo disponível</div>
                       <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
                     </div>
                   </div>
@@ -316,7 +359,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
                   <div class="d-flex align-items-center gap-3">
                     <div class="mini-icon">!</div>
                     <div>
-                      <div class="text-body-secondary small" style="font-size:.92rem;">Quanto falta para empatar o mês</div>
+                    <div class="text-body-secondary small" style="font-size:.92rem;">Quanto falta para empatar o mês</div>
                       <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format(max(0, -$overall['projected']), 2, ',', '.') ?></div>
                     </div>
                   </div>
@@ -406,10 +449,42 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
             <div class="section-title">
               <div>
                 <h2 class="fw-bold mb-1" style="font-size:1.2rem;">Entradas x Saídas do mês</h2>
-                <div class="text-body-secondary small" style="font-size:.93rem;">Resumo visual do comportamento do mês</div>
+                <div class="text-body-secondary small" style="font-size:.93rem;">Resumo visual do comportamento de <?= e($selectedMonthLabel) ?></div>
               </div>
               <span class="badge rounded-pill text-bg-light border">Resultado: R$ <?= number_format($overall['projected'], 2, ',', '.') ?></span>
             </div>
+            <?php
+              $daysInMonth = max(1, (int) date('t', strtotime($monthStart)));
+              $incomeSeries = array_fill(1, $daysInMonth, 0.0);
+              $expenseSeries = array_fill(1, $daysInMonth, 0.0);
+              foreach ($graphRows as $row) {
+                  $day = (int) substr($row['day_key'], 8, 2);
+                  if ($day >= 1 && $day <= $daysInMonth) {
+                      $incomeSeries[$day] = (float) ($row['income_amount'] ?? 0);
+                      $expenseSeries[$day] = (float) ($row['expense_amount'] ?? 0);
+                  }
+              }
+              $incomeCumulative = [];
+              $expenseCumulative = [];
+              $runningIncome = 0;
+              $runningExpense = 0;
+              foreach (range(1, $daysInMonth) as $day) {
+                  $runningIncome += $incomeSeries[$day];
+                  $runningExpense += $expenseSeries[$day];
+                  $incomeCumulative[$day] = $runningIncome;
+                  $expenseCumulative[$day] = $runningExpense;
+              }
+              $maxGraph = max(1, max($incomeCumulative ?: [0]), max($expenseCumulative ?: [0]));
+              $buildPath = function (array $series) use ($daysInMonth, $maxGraph): string {
+                  $points = [];
+                  foreach (range(1, $daysInMonth) as $day) {
+                      $x = (($day - 1) / max(1, $daysInMonth - 1)) * 100;
+                      $y = 100 - (($series[$day] ?? 0) / $maxGraph) * 100;
+                      $points[] = sprintf('%.2f,%.2f', $x, $y);
+                  }
+                  return 'M' . implode(' L', $points);
+              };
+            ?>
             <div class="row g-3 align-items-center">
               <div class="col-12 col-md-4">
                 <div class="d-grid gap-3">
@@ -431,8 +506,8 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
                 <div class="chart-wrap">
                   <div class="chart-grid"></div>
                   <svg class="chart-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                    <path d="M0,92 C10,90 14,78 20,68 C28,55 36,50 44,42 C54,33 61,29 70,24 C80,18 88,17 100,12" fill="none" stroke="#16a34a" stroke-width="2.8" stroke-linecap="round"/>
-                    <path d="M0,94 C10,93 14,86 20,80 C28,73 35,66 44,61 C54,55 62,51 70,47 C80,43 89,39 100,34" fill="none" stroke="#2563eb" stroke-width="2.8" stroke-linecap="round"/>
+                    <path d="<?= e($buildPath($incomeCumulative)) ?>" fill="none" stroke="#16a34a" stroke-width="2.8" stroke-linecap="round"/>
+                    <path d="<?= e($buildPath($expenseCumulative)) ?>" fill="none" stroke="#2563eb" stroke-width="2.8" stroke-linecap="round"/>
                   </svg>
                 </div>
               </div>
