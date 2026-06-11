@@ -144,48 +144,47 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 <?= bootstrap_assets() ?>
 <link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 <style>
-.dashboard-shell{display:grid; grid-template-columns:116px minmax(0,1fr); gap:18px}
+.dashboard-shell{display:grid; grid-template-columns:132px minmax(0,1fr); gap:18px}
 .dashboard-sidebar{
   position:sticky; top:14px; align-self:start;
   min-height:calc(100vh - 28px);
-  padding:18px 14px;
-  border-radius:28px;
-  border:1px solid rgba(15,23,42,.08);
-  background:rgba(255,255,255,.88);
-  box-shadow:0 18px 50px rgba(15,23,42,.08);
-  backdrop-filter:blur(18px);
+  padding:20px 16px;
+  border-radius:30px;
+  border:1px solid rgba(15,23,42,.06);
+  background:rgba(255,255,255,.92);
+  box-shadow:0 16px 40px rgba(15,23,42,.06);
+  backdrop-filter:blur(16px);
 }
 .dashboard-brand{
-  width:48px; height:48px; border-radius:16px;
+  width:44px; height:44px; border-radius:14px;
   background:linear-gradient(135deg,#1d4ed8,#60a5fa);
-  box-shadow:0 18px 35px rgba(37,99,235,.24);
+  box-shadow:0 12px 30px rgba(37,99,235,.20);
 }
-.dashboard-nav{display:grid; gap:8px; margin-top:26px}
+.dashboard-nav{display:grid; gap:8px; margin-top:28px}
 .dashboard-nav a{
   display:flex; align-items:center; gap:10px;
-  padding:11px 10px; border-radius:16px;
+  padding:12px 12px; border-radius:16px;
   color:#39475f; font-weight:700; font-size:.92rem;
 }
-.dashboard-nav a.active{background:rgba(37,99,235,.08); color:#1d4ed8}
-.dashboard-footer{display:grid; gap:12px; position:absolute; bottom:18px; left:14px; right:14px}
+.dashboard-nav a.active{background:rgba(37,99,235,.08); color:#1d4ed8; box-shadow:inset 3px 0 0 #1d4ed8}
+.dashboard-footer{display:grid; gap:12px; position:absolute; bottom:18px; left:16px; right:16px}
 .mini-icon{
   width:42px; height:42px; border-radius:14px; display:grid; place-items:center;
   background:rgba(37,99,235,.08); color:#1d4ed8; font-weight:800;
 }
 .metric-card{
-  border:1px solid rgba(15,23,42,.08);
+  border:1px solid rgba(15,23,42,.06);
   border-radius:24px;
-  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(248,251,255,.92));
-  box-shadow:0 18px 45px rgba(15,23,42,.06);
+  background:rgba(255,255,255,.98);
+  box-shadow:0 10px 24px rgba(15,23,42,.05);
 }
 .hero-card{
-  border:1px solid rgba(15,23,42,.08);
-  border-radius:28px;
+  border:1px solid rgba(15,23,42,.06);
+  border-radius:30px;
   background:
-    radial-gradient(circle at 20% 30%, rgba(37,99,235,.12), transparent 24%),
-    radial-gradient(circle at 95% 5%, rgba(14,165,233,.12), transparent 18%),
-    linear-gradient(180deg, rgba(255,255,255,.98), rgba(243,247,253,.92));
-  box-shadow:0 18px 50px rgba(15,23,42,.08);
+    radial-gradient(circle at 18% 30%, rgba(37,99,235,.10), transparent 22%),
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,249,252,.95));
+  box-shadow:0 12px 28px rgba(15,23,42,.05);
 }
 .health-ring{
   width:260px; height:260px; border-radius:50%;
@@ -203,8 +202,8 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 .chart-wrap{
   height:230px;
   border-radius:24px;
-  background:linear-gradient(180deg, #f8fbff, #eef4fb);
-  border:1px solid rgba(15,23,42,.06);
+  background:linear-gradient(180deg, #fbfdff, #f3f7fc);
+  border:1px solid rgba(15,23,42,.05);
   position:relative;
   overflow:hidden;
 }
@@ -225,6 +224,8 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
   background:#fff;
 }
 .action-arrow{color:#94a3b8; font-size:1.3rem}
+.section-title{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px}
+.section-title h2,.section-title h3{margin:0}
 @media (max-width: 992px){
   .dashboard-shell{grid-template-columns:1fr}
   .dashboard-sidebar{position:relative; min-height:auto}
@@ -256,12 +257,8 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
     </aside>
 
     <main class="min-vw-0">
-      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-3">
+      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4">
         <div>
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <span class="badge rounded-pill text-bg-light border">Financeiro</span>
-            <span class="badge rounded-pill text-bg-success-subtle text-success-emphasis">Saúde do mês</span>
-          </div>
           <h1 class="display-6 fw-bold mb-1">Bom dia, <?= e($user['name']) ?>! 👋</h1>
           <div class="text-body-secondary">Aqui está a saúde das suas finanças hoje.</div>
         </div>
@@ -291,14 +288,14 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         </div>
       <?php endif; ?>
 
-      <section class="hero-card p-3 p-lg-4 mb-3">
+      <section class="hero-card p-3 p-lg-4 mb-4">
         <div class="row g-4 align-items-center">
           <div class="col-12 col-xl-5 text-center">
             <div class="health-ring">
               <div class="health-ring-inner px-3">
                 <div class="health-percent"><?= $progressCovered ?>%</div>
                 <div class="health-sub">do mês coberto</div>
-                <span class="badge text-bg-success-subtle text-success-emphasis mt-3">Você está no controle</span>
+                <span class="badge text-bg-success-subtle text-success-emphasis mt-3 px-3 py-2">Muito bem! Você está no controle.</span>
               </div>
             </div>
           </div>
@@ -357,7 +354,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         </div>
       </section>
 
-      <div class="row g-3 mb-3">
+      <div class="row g-3 mb-4">
         <div class="col-12 col-md-6 col-xxl-3">
           <div class="metric-card p-3 h-100">
             <div class="d-flex align-items-center gap-3">
@@ -408,10 +405,10 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         </div>
       </div>
 
-      <div class="row g-3 mb-3">
+      <div class="row g-3 mb-4">
         <div class="col-12 col-xl-7">
           <div class="metric-card p-3 p-lg-4 h-100">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-title">
               <div>
                 <h2 class="h4 fw-bold mb-1">Entradas x Saídas do mês</h2>
                 <div class="text-body-secondary small">Resumo visual do comportamento do mês</div>
@@ -450,7 +447,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 
         <div class="col-12 col-xl-5">
           <div class="metric-card p-3 p-lg-4 h-100">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-title">
               <div>
                 <h2 class="h4 fw-bold mb-1">O que fazer agora</h2>
                 <div class="text-body-secondary small">Próximas ações sugeridas</div>
@@ -473,10 +470,10 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         </div>
       </div>
 
-      <div class="row g-3 mb-3">
+      <div class="row g-3 mb-4">
         <div class="col-12 col-lg-6">
           <div class="metric-card p-3 p-lg-4 h-100">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-title">
               <h2 class="h4 fw-bold mb-0">Cartões</h2>
               <a href="<?= e(base_path('cards.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Ver cartões</a>
             </div>
@@ -501,7 +498,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         </div>
         <div class="col-12 col-lg-6">
           <div class="metric-card p-3 p-lg-4 h-100">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-title">
               <h2 class="h4 fw-bold mb-0">Recursos avançados</h2>
               <span class="badge rounded-pill text-bg-light border">Ocultos para simplificar</span>
             </div>
@@ -531,7 +528,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
       <div class="row g-3 mb-3">
         <div class="col-12 col-lg-4">
           <div class="metric-card p-3 p-lg-4 h-100">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-title">
               <h2 class="h5 fw-bold mb-0">Instâncias</h2>
               <span class="badge rounded-pill text-bg-light border"><?= count($instances) ?></span>
             </div>
@@ -550,7 +547,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         </div>
         <div class="col-12 col-lg-8">
           <div class="metric-card p-3 p-lg-4 h-100">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-title">
               <h2 class="h5 fw-bold mb-0">Convites pendentes</h2>
               <span class="badge rounded-pill text-bg-light border">Acessos compartilhados</span>
             </div>
