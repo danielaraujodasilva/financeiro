@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userId = $auth->userId();
         $instances = $userId ? $auth->instancesForUser($userId) : [];
         if (count($instances) === 1) {
-            header('Location: ' . base_path('financial.php?instance_id=' . (int) $instances[0]['id']));
+            header('Location: ' . base_path('dashboard.php'));
         } else {
             header('Location: ' . base_path('dashboard.php'));
         }
