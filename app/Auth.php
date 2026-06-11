@@ -15,7 +15,7 @@ final class Auth
             throw new RuntimeException('Email já cadastrado.');
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO users (name, email, password_hash, interface_mode, created_at) VALUES (?, ?, ?, "simple", datetime("now"))');
+        $stmt = $this->pdo->prepare('INSERT INTO users (name, email, password_hash, interface_mode, onboarding_completed, created_at) VALUES (?, ?, ?, "simple", 0, datetime("now"))');
         $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
         return (int) $this->pdo->lastInsertId();
     }
@@ -46,7 +46,7 @@ final class Auth
             return null;
         }
 
-        $stmt = $this->pdo->prepare('SELECT id, name, email, interface_mode, created_at FROM users WHERE id = ?');
+        $stmt = $this->pdo->prepare('SELECT id, name, email, interface_mode, onboarding_completed, onboarding_goal, onboarding_completed_at, created_at FROM users WHERE id = ?');
         $stmt->execute([$id]);
         $user = $stmt->fetch();
 
@@ -71,6 +71,12 @@ final class Auth
         if (isset($_SESSION['user_id']) && (int) $_SESSION['user_id'] === $userId) {
             $_SESSION['interface_mode'] = $mode;
         }
+    }
+
+    public function setOnboardingData(int $userId, string $goal, int $completed): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET onboarding_goal = ?, onboarding_completed = ?, onboarding_completed_at = CASE WHEN ? = 1 THEN datetime("now") ELSE onboarding_completed_at END WHERE id = ?');
+        $stmt->execute([$goal, $completed ? 1 : 0, $completed ? 1 : 0, $userId]);
     }
 
     public function hasInstanceAccess(int $userId, int $instanceId): bool

@@ -124,6 +124,7 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
 } elseif ($overall['open_bills'] > 0 || $overall['expense_planned'] > 0) {
     $overallRisk = 'médio';
 }
+$onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -179,6 +180,19 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
       <span class="tag">Padrão atual: <?= e(ucfirst($interfaceMode)) ?></span>
     </div>
   </div>
+
+  <?php if (!$onboardingCompleted): ?>
+    <div class="card enter">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <div class="tag">Primeiro acesso</div>
+          <h2 class="mb-1">Quer deixar tudo pronto em poucos passos?</h2>
+          <p class="muted mb-0">O onboarding ajuda a escolher o foco, criar áreas e cadastrar contas e gastos fixos iniciais.</p>
+        </div>
+        <a class="btn btn-primary" href="<?= e(base_path('onboarding.php')) ?>">Começar onboarding</a>
+      </div>
+    </div>
+  <?php endif; ?>
     <div class="statbar">
       <div class="stat"><span class="muted">Instâncias</span><strong><?= count($instances) ?></strong></div>
       <div class="stat"><span class="muted">Convites pendentes</span><strong><?= count($auth->pendingInvitesForEmail($user['email'])) ?></strong></div>

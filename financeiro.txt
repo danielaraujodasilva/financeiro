@@ -546,3 +546,4 @@ Progresso da simplificação
 - [x] Fluxo de caixa com visão 7/30/60/90 dias.
 - [x] Insights principais levados para página própria com ação rápida.
 - [x] Implementar preferência simple/advanced por usuário.
+- [x] Onboarding inicial com assistente simples.

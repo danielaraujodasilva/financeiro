@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     interface_mode TEXT NOT NULL DEFAULT 'simple',
+    onboarding_completed INTEGER NOT NULL DEFAULT 0,
+    onboarding_goal TEXT NULL,
+    onboarding_completed_at TEXT NULL,
     created_at TEXT NOT NULL
 );
 
@@ -451,6 +454,15 @@ SQL);
         $userNames = array_column($userColumns, 'name');
         if (!in_array('interface_mode', $userNames, true)) {
             $pdo->exec("ALTER TABLE users ADD COLUMN interface_mode TEXT NOT NULL DEFAULT 'simple'");
+        }
+        if (!in_array('onboarding_completed', $userNames, true)) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 0');
+        }
+        if (!in_array('onboarding_goal', $userNames, true)) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN onboarding_goal TEXT NULL');
+        }
+        if (!in_array('onboarding_completed_at', $userNames, true)) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN onboarding_completed_at TEXT NULL');
         }
     }
 
