@@ -139,50 +139,50 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 <?= bootstrap_assets() ?>
 <link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 <style>
-.dashboard-shell{display:grid; grid-template-columns:124px minmax(0,1fr); gap:16px}
+.dashboard-shell{display:grid; grid-template-columns:120px minmax(0,1fr); gap:15px}
 .dashboard-sidebar{
   position:sticky; top:14px; align-self:start;
   min-height:calc(100vh - 28px);
-  padding:18px 14px;
-  border-radius:28px;
+  padding:16px 13px;
+  border-radius:26px;
   border:1px solid rgba(15,23,42,.06);
   background:rgba(255,255,255,.92);
   box-shadow:0 16px 40px rgba(15,23,42,.06);
   backdrop-filter:blur(16px);
 }
 .dashboard-brand{
-  width:44px; height:44px; border-radius:14px;
+  width:42px; height:42px; border-radius:13px;
   background:linear-gradient(135deg,#1d4ed8,#60a5fa);
   box-shadow:0 12px 30px rgba(37,99,235,.20);
 }
-.dashboard-nav{display:grid; gap:7px; margin-top:26px}
+.dashboard-nav{display:grid; gap:6px; margin-top:24px}
 .dashboard-nav a{
   display:flex; align-items:center; gap:10px;
-  padding:11px 10px; border-radius:15px;
-  color:#39475f; font-weight:700; font-size:.92rem;
+  padding:10px 10px; border-radius:14px;
+  color:#39475f; font-weight:700; font-size:.88rem;
 }
 .dashboard-nav a.active{background:rgba(37,99,235,.08); color:#1d4ed8; box-shadow:inset 3px 0 0 #1d4ed8}
-.dashboard-footer{display:grid; gap:10px; position:absolute; bottom:16px; left:14px; right:14px}
+.dashboard-footer{display:grid; gap:9px; position:absolute; bottom:14px; left:13px; right:13px}
 .mini-icon{
-  width:42px; height:42px; border-radius:14px; display:grid; place-items:center;
+  width:40px; height:40px; border-radius:13px; display:grid; place-items:center;
   background:rgba(37,99,235,.08); color:#1d4ed8; font-weight:800;
 }
 .metric-card{
   border:1px solid rgba(15,23,42,.06);
-  border-radius:22px;
+  border-radius:20px;
   background:rgba(255,255,255,.98);
   box-shadow:0 9px 20px rgba(15,23,42,.045);
 }
 .hero-card{
   border:1px solid rgba(15,23,42,.06);
-  border-radius:28px;
+  border-radius:26px;
   background:
     radial-gradient(circle at 18% 30%, rgba(37,99,235,.10), transparent 22%),
     linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,249,252,.95));
   box-shadow:0 10px 24px rgba(15,23,42,.045);
 }
 .health-ring{
-  width:240px; height:240px; border-radius:50%;
+  width:226px; height:226px; border-radius:50%;
   background:conic-gradient(#1d4ed8 <?= $progressCovered ?>%, #dbe4f1 0);
   padding:20px;
   margin:0 auto;
@@ -192,11 +192,11 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
   background:linear-gradient(180deg,#f8fbff,#eef4fb);
   display:grid; place-items:center;
 }
-.health-percent{font-size:clamp(3rem,6vw,4.7rem); line-height:1; font-weight:800; color:#1e3a8a}
-.health-sub{color:#4b5f7a; font-weight:600}
+.health-percent{font-size:clamp(2.7rem,5vw,4rem); line-height:1; font-weight:800; color:#1e3a8a}
+.health-sub{color:#4b5f7a; font-weight:600; font-size:.95rem}
 .chart-wrap{
-  height:210px;
-  border-radius:24px;
+  height:198px;
+  border-radius:22px;
   background:linear-gradient(180deg, #fbfdff, #f3f7fc);
   border:1px solid rgba(15,23,42,.05);
   position:relative;
@@ -214,12 +214,12 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 }
 .action-item{
   display:flex; align-items:center; gap:14px;
-  padding:16px; border-radius:18px;
+  padding:14px; border-radius:17px;
   border:1px solid rgba(15,23,42,.06);
   background:#fff;
 }
 .action-arrow{color:#94a3b8; font-size:1.3rem}
-.section-title{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px}
+.section-title{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:11px}
 .section-title h2,.section-title h3{margin:0}
 @media (max-width: 992px){
   .dashboard-shell{grid-template-columns:1fr}
@@ -232,7 +232,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 </style>
 </head>
 <body>
-<div class="container-fluid py-3 py-lg-4" style="max-width:1440px">
+<div class="container-fluid py-3 py-lg-4" style="max-width:1380px">
   <div class="dashboard-shell">
     <aside class="dashboard-sidebar d-none d-lg-block">
       <div class="d-flex justify-content-center">
@@ -254,8 +254,8 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
     <main class="min-vw-0">
       <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-3">
         <div>
-          <h1 class="display-6 fw-bold mb-1">Bom dia, <?= e($user['name']) ?>! 👋</h1>
-          <div class="text-body-secondary">Aqui está a saúde das suas finanças hoje.</div>
+          <h1 class="fw-bold mb-1" style="font-size:clamp(2rem,2.8vw,2.8rem); letter-spacing:-0.03em;">Bom dia, <?= e($user['name']) ?>! 👋</h1>
+          <div class="text-body-secondary" style="font-size:1rem;">Aqui está a saúde das suas finanças hoje.</div>
         </div>
         <div class="d-flex flex-wrap gap-2">
           <div class="dropdown">
@@ -296,50 +296,50 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
           </div>
           <div class="col-12 col-xl-7">
             <div class="mb-2">
-              <h2 class="h3 fw-bold mb-2">Você está indo muito bem!</h2>
-              <div class="text-body-secondary">Continue assim para fechar o mês tranquilo.</div>
+              <h2 class="fw-bold mb-2" style="font-size:clamp(1.4rem,1.8vw,2rem);">Você está indo muito bem!</h2>
+              <div class="text-body-secondary" style="font-size:1rem;">Continue assim para fechar o mês tranquilo.</div>
             </div>
             <div class="row g-2 mt-1">
               <div class="col-12 col-md-6">
-                <div class="metric-card p-3 h-100">
+                <div class="metric-card p-3 h-100" style="min-height:92px;">
                   <div class="d-flex align-items-center gap-3">
                     <div class="mini-icon">R$</div>
                     <div>
-                      <div class="text-body-secondary small">Saldo disponível</div>
-                      <div class="fs-5 fw-bold">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
+                      <div class="text-body-secondary small" style="font-size:.92rem;">Saldo disponível</div>
+                      <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
                     </div>
                   </div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="metric-card p-3 h-100">
+                <div class="metric-card p-3 h-100" style="min-height:92px;">
                   <div class="d-flex align-items-center gap-3">
                     <div class="mini-icon">!</div>
                     <div>
-                      <div class="text-body-secondary small">Quanto falta para empatar o mês</div>
-                      <div class="fs-5 fw-bold">R$ <?= number_format(max(0, -$overall['projected']), 2, ',', '.') ?></div>
+                      <div class="text-body-secondary small" style="font-size:.92rem;">Quanto falta para empatar o mês</div>
+                      <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format(max(0, -$overall['projected']), 2, ',', '.') ?></div>
                     </div>
                   </div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="metric-card p-3 h-100">
+                <div class="metric-card p-3 h-100" style="min-height:92px;">
                   <div class="d-flex align-items-center gap-3">
                     <div class="mini-icon">↑</div>
                     <div>
-                      <div class="text-body-secondary small">Previsão no fim do mês</div>
-                      <div class="fs-5 fw-bold">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
+                      <div class="text-body-secondary small" style="font-size:.92rem;">Previsão no fim do mês</div>
+                      <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
                     </div>
                   </div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
-                <div class="metric-card p-3 h-100">
+                <div class="metric-card p-3 h-100" style="min-height:92px;">
                   <div class="d-flex align-items-center gap-3">
                     <div class="mini-icon">⏰</div>
                     <div>
-                      <div class="text-body-secondary small">Contas vencendo em 7 dias</div>
-                      <div class="fs-5 fw-bold text-danger">R$ <?= number_format($overall['due_next7'], 2, ',', '.') ?></div>
+                      <div class="text-body-secondary small" style="font-size:.92rem;">Contas vencendo em 7 dias</div>
+                      <div class="fw-bold text-danger" style="font-size:1.15rem;">R$ <?= number_format($overall['due_next7'], 2, ',', '.') ?></div>
                     </div>
                   </div>
                 </div>
@@ -351,49 +351,49 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 col-xxl-3">
-          <div class="metric-card p-3 h-100">
+          <div class="metric-card p-3 h-100" style="min-height:140px;">
             <div class="d-flex align-items-center gap-3">
               <div class="mini-icon bg-success-subtle text-success">↓</div>
               <div>
-                <div class="text-body-secondary small">Tenho hoje</div>
-                <div class="fs-3 fw-bold text-success">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
-                <div class="text-body-secondary">Saldo disponível</div>
+                <div class="text-body-secondary small" style="font-size:.92rem;">Tenho hoje</div>
+                <div class="fw-bold text-success" style="font-size:1.65rem; line-height:1.1;">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
+                <div class="text-body-secondary" style="font-size:.95rem;">Saldo disponível</div>
               </div>
             </div>
           </div>
         </div>
         <div class="col-12 col-md-6 col-xxl-3">
-          <div class="metric-card p-3 h-100">
+          <div class="metric-card p-3 h-100" style="min-height:140px;">
             <div class="d-flex align-items-center gap-3">
               <div class="mini-icon bg-primary-subtle text-primary">↗</div>
               <div>
-                <div class="text-body-secondary small">Vou receber</div>
-                <div class="fs-3 fw-bold text-primary">R$ <?= number_format($overall['income_received'] + $overall['income_planned'], 2, ',', '.') ?></div>
-                <div class="text-body-secondary">Em entradas do mês</div>
+                <div class="text-body-secondary small" style="font-size:.92rem;">Vou receber</div>
+                <div class="fw-bold text-primary" style="font-size:1.65rem; line-height:1.1;">R$ <?= number_format($overall['income_received'] + $overall['income_planned'], 2, ',', '.') ?></div>
+                <div class="text-body-secondary" style="font-size:.95rem;">Em entradas do mês</div>
               </div>
             </div>
           </div>
         </div>
         <div class="col-12 col-md-6 col-xxl-3">
-          <div class="metric-card p-3 h-100">
+          <div class="metric-card p-3 h-100" style="min-height:140px;">
             <div class="d-flex align-items-center gap-3">
               <div class="mini-icon bg-warning-subtle text-warning">↓</div>
               <div>
-                <div class="text-body-secondary small">Vou gastar</div>
-                <div class="fs-3 fw-bold text-warning">R$ <?= number_format($overall['expense_paid'] + $overall['expense_planned'] + $overall['open_bills'], 2, ',', '.') ?></div>
-                <div class="text-body-secondary">Gastos, contas e cartões</div>
+                <div class="text-body-secondary small" style="font-size:.92rem;">Vou gastar</div>
+                <div class="fw-bold text-warning" style="font-size:1.65rem; line-height:1.1;">R$ <?= number_format($overall['expense_paid'] + $overall['expense_planned'] + $overall['open_bills'], 2, ',', '.') ?></div>
+                <div class="text-body-secondary" style="font-size:.95rem;">Gastos, contas e cartões</div>
               </div>
             </div>
           </div>
         </div>
         <div class="col-12 col-md-6 col-xxl-3">
-          <div class="metric-card p-3 h-100">
+          <div class="metric-card p-3 h-100" style="min-height:140px;">
             <div class="d-flex align-items-center gap-3">
               <div class="mini-icon bg-purple-subtle text-purple" style="background:rgba(147,51,234,.09); color:#7c3aed;">=</div>
               <div>
-                <div class="text-body-secondary small">Sobra prevista</div>
-                <div class="fs-3 fw-bold" style="color:#7c3aed;">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
-                <div class="text-body-secondary">No fim do mês</div>
+                <div class="text-body-secondary small" style="font-size:.92rem;">Sobra prevista</div>
+                <div class="fw-bold" style="font-size:1.65rem; line-height:1.1; color:#7c3aed;">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
+                <div class="text-body-secondary" style="font-size:.95rem;">No fim do mês</div>
               </div>
             </div>
           </div>
@@ -405,8 +405,8 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
           <div class="metric-card p-3 p-lg-4 h-100">
             <div class="section-title">
               <div>
-                <h2 class="h4 fw-bold mb-1">Entradas x Saídas do mês</h2>
-                <div class="text-body-secondary small">Resumo visual do comportamento do mês</div>
+                <h2 class="fw-bold mb-1" style="font-size:1.2rem;">Entradas x Saídas do mês</h2>
+                <div class="text-body-secondary small" style="font-size:.93rem;">Resumo visual do comportamento do mês</div>
               </div>
               <span class="badge rounded-pill text-bg-light border">Resultado: R$ <?= number_format($overall['projected'], 2, ',', '.') ?></span>
             </div>
@@ -444,8 +444,8 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
           <div class="metric-card p-3 p-lg-4 h-100">
             <div class="section-title">
               <div>
-                <h2 class="h4 fw-bold mb-1">O que fazer agora</h2>
-                <div class="text-body-secondary small">Próximas ações sugeridas</div>
+                <h2 class="fw-bold mb-1" style="font-size:1.2rem;">O que fazer agora</h2>
+                <div class="text-body-secondary small" style="font-size:.93rem;">Próximas ações sugeridas</div>
               </div>
               <span class="badge rounded-pill text-bg-light border"><?= e(ucfirst($overallRisk)) ?></span>
             </div>
@@ -469,7 +469,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         <div class="col-12 col-lg-6">
           <div class="metric-card p-3 p-lg-4 h-100">
             <div class="section-title">
-              <h2 class="h4 fw-bold mb-0">Cartões</h2>
+              <h2 class="fw-bold mb-0" style="font-size:1.15rem;">Cartões</h2>
               <a href="<?= e(base_path('cards.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Ver cartões</a>
             </div>
             <div class="d-grid gap-3">
@@ -494,7 +494,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         <div class="col-12 col-lg-6">
           <div class="metric-card p-3 p-lg-4 h-100">
             <div class="section-title">
-              <h2 class="h4 fw-bold mb-0">Recursos avançados</h2>
+              <h2 class="fw-bold mb-0" style="font-size:1.15rem;">Recursos avançados</h2>
               <span class="badge rounded-pill text-bg-light border">Ocultos para simplificar</span>
             </div>
             <div class="row g-2">
@@ -524,7 +524,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         <div class="col-12 col-lg-4">
           <div class="metric-card p-3 p-lg-4 h-100">
             <div class="section-title">
-              <h2 class="h5 fw-bold mb-0">Instâncias</h2>
+              <h2 class="fw-bold mb-0" style="font-size:1.05rem;">Instâncias</h2>
               <span class="badge rounded-pill text-bg-light border"><?= count($instances) ?></span>
             </div>
             <div class="list-group list-group-flush rounded-4 overflow-hidden">
@@ -543,7 +543,7 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
         <div class="col-12 col-lg-8">
           <div class="metric-card p-3 p-lg-4 h-100">
             <div class="section-title">
-              <h2 class="h5 fw-bold mb-0">Convites pendentes</h2>
+              <h2 class="fw-bold mb-0" style="font-size:1.05rem;">Convites pendentes</h2>
               <span class="badge rounded-pill text-bg-light border">Acessos compartilhados</span>
             </div>
             <?php $invites = $auth->pendingInvitesForEmail($user['email']); ?>
