@@ -14,7 +14,7 @@ if (!$forceDashboard && count($instances) === 1 && (string) ($_GET['add'] ?? '')
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'set_mode') {
     $auth->setInterfaceMode($userId, (string) ($_POST['mode'] ?? 'simple'));
-    header('Location: ' . base_path('dashboard.php'));
+    header('Location: ' . base_path('dashboard.php?view=chooser'));
     exit;
 }
 
@@ -61,16 +61,11 @@ function finance_instance_summary(PDO $pdo, int $instanceId, string $monthStart,
     $balanceStmt->execute([$instanceId]);
     $currentBalance = (float) $balanceStmt->fetchColumn();
 
-    $cardStmt = $pdo->prepare('
-        SELECT COALESCE(SUM(total_amount),0)
-        FROM credit_card_bills
-        WHERE instance_id = ? AND status IN ("open", "overdue")
-    ');
+    $cardStmt = $pdo->prepare('SELECT COALESCE(SUM(total_amount),0) FROM credit_card_bills WHERE instance_id = ? AND status IN ("open", "overdue")');
     $cardStmt->execute([$instanceId]);
     $openBills = (float) $cardStmt->fetchColumn();
 
     $projected = $currentBalance + (float) ($summary['net_month'] ?? 0) - (float) ($summary['future_expense_month'] ?? 0) - $openBills;
-
     $risk = 'baixo';
     if ($projected < 0 || (float) ($summary['overdue_amount'] ?? 0) > 0) {
         $risk = 'alto';
@@ -105,25 +100,13 @@ $quickAddCategories = $quickAddInstanceId ? $financial->categories($quickAddInst
 $quickAddAccounts = $quickAddInstanceId ? $financial->accounts($quickAddInstanceId) : [];
 $quickAddCards = $quickAddInstanceId ? $financial->cards($quickAddInstanceId) : [];
 
-$overall = [
-    'current_balance' => 0,
-    'income_received' => 0,
-    'income_planned' => 0,
-    'expense_paid' => 0,
-    'expense_planned' => 0,
-    'overdue_amount' => 0,
-    'due_next7' => 0,
-    'reserve' => 0,
-    'open_bills' => 0,
-];
+$overall = ['current_balance' => 0,'income_received' => 0,'income_planned' => 0,'expense_paid' => 0,'expense_planned' => 0,'overdue_amount' => 0,'due_next7' => 0,'reserve' => 0,'open_bills' => 0];
 foreach ($instanceSummaries as $summary) {
     foreach ($overall as $key => $value) {
         $overall[$key] += (float) ($summary[$key] ?? 0);
     }
 }
-
 $overall['projected'] = $overall['current_balance'] + $overall['income_received'] + $overall['income_planned'] - $overall['expense_paid'] - $overall['expense_planned'] - $overall['overdue_amount'] - $overall['open_bills'];
-
 $overallRisk = 'baixo';
 if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
     $overallRisk = 'alto';
@@ -141,133 +124,185 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 <?= bootstrap_assets() ?>
 <link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
 </head>
-<body>
-<div class="wrap">
-  <div class="topbar fade-in">
-    <div class="brand">
-      <div class="mark"></div>
-      <div>
-        <div class="tag">Financeiro · Multi-instância</div>
-        <h1 class="headline">Bem-vindo, <?= e($user['name']) ?></h1>
+<body class="bg-body-tertiary">
+<div class="container py-3 py-lg-4">
+  <div class="card shadow-sm border-0 rounded-4 mb-3">
+    <div class="card-body p-3 p-lg-4">
+      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+        <div>
+          <span class="badge rounded-pill text-bg-primary-subtle text-primary-emphasis mb-2">Financeiro · Multi-instância</span>
+          <h1 class="h2 fw-bold mb-1">Bem-vindo, <?= e($user['name']) ?></h1>
+          <div class="text-body-secondary">Seu centro de comando financeiro, sem complicação.</div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-outline-secondary" href="<?= e(base_path('logout.php')) ?>">Sair</a>
+          <a class="btn btn-primary" href="<?= e(base_path('instance-create.php')) ?>">Nova instância</a>
+        </div>
       </div>
-    </div>
-    <div class="actions">
-      <a class="btn btn-secondary" href="<?= e(base_path('logout.php')) ?>">Sair</a>
-      <a class="btn btn-primary" href="<?= e(base_path('instance-create.php')) ?>">Nova instância</a>
     </div>
   </div>
 
-  <div class="card hero enter">
-    <div class="split">
-      <div>
-        <div class="tag">Modo básico primeiro</div>
-        <h2>Seu centro de comando financeiro, sem complicação</h2>
-        <p class="muted">O sistema mostra primeiro o essencial: saldo, risco, entradas e saídas. As ferramentas mais avançadas continuam disponíveis, mas ficam organizadas em camadas para não assustar ninguém.</p>
+  <div class="card shadow-sm border-0 rounded-4 mb-3">
+    <div class="card-body p-3 p-lg-4">
+      <div class="row g-3 align-items-start">
+        <div class="col-12 col-lg-6">
+          <span class="badge rounded-pill text-bg-light border mb-2">Modo básico primeiro</span>
+          <h2 class="h3 fw-bold mb-2">Resumo da sua vida financeira</h2>
+          <p class="text-body-secondary mb-0">O sistema mostra primeiro o essencial: saldo, risco, entradas e saídas.</p>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="row g-2">
+            <div class="col-6 col-md-4">
+              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
+                <div class="card-body py-3 px-3">
+                  <div class="small text-body-secondary">Saldo atual</div>
+                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
+                <div class="card-body py-3 px-3">
+                  <div class="small text-body-secondary">Projetado</div>
+                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
+                <div class="card-body py-3 px-3">
+                  <div class="small text-body-secondary">Risco</div>
+                  <div class="fs-5 fw-bold"><?= e(ucfirst($overallRisk)) ?></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div>
-        <div class="tag">Risco geral: <?= e($overallRisk) ?></div>
-        <div class="statbar">
-          <div class="stat"><span class="muted">Saldo atual</span><strong>R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></strong></div>
-          <div class="stat"><span class="muted">Projetado</span><strong>R$ <?= number_format($overall['projected'], 2, ',', '.') ?></strong></div>
-          <div class="stat"><span class="muted">Reserva</span><strong>R$ <?= number_format($overall['reserve'], 2, ',', '.') ?></strong></div>
+
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <a class="btn btn-primary" href="<?= e(base_path('transactions.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Novo lançamento</a>
+        <a class="btn btn-outline-primary" href="<?= e(base_path('cards.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Cartões</a>
+        <a class="btn btn-outline-secondary" href="<?= e(base_path('financial.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Configurações</a>
       </div>
-    </div>
-    <div class="actions" style="margin-top:16px">
-      <a class="btn btn-primary" href="<?= e(base_path('transactions.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Novo lançamento</a>
-      <a class="btn btn-secondary" href="<?= e(base_path('cards.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Cartões</a>
-      <a class="btn btn-secondary" href="<?= e(base_path('financial.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Ver base</a>
-    </div>
-    <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
-      <form method="post" class="d-flex gap-2 align-items-center">
-        <input type="hidden" name="action" value="set_mode">
-        <button class="btn <?= $interfaceMode === 'simple' ? 'btn-primary' : 'btn-secondary' ?>" name="mode" value="simple" type="submit">Modo simples</button>
-        <button class="btn <?= $interfaceMode === 'advanced' ? 'btn-primary' : 'btn-secondary' ?>" name="mode" value="advanced" type="submit">Modo avançado</button>
-      </form>
-      <span class="tag">Padrão atual: <?= e(ucfirst($interfaceMode)) ?></span>
+
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <form method="post" class="d-flex flex-wrap gap-2 align-items-center">
+          <input type="hidden" name="action" value="set_mode">
+          <button class="btn <?= $interfaceMode === 'simple' ? 'btn-primary' : 'btn-outline-primary' ?>" name="mode" value="simple" type="submit">Modo simples</button>
+          <button class="btn <?= $interfaceMode === 'advanced' ? 'btn-primary' : 'btn-outline-primary' ?>" name="mode" value="advanced" type="submit">Modo avançado</button>
+        </form>
+        <span class="badge rounded-pill text-bg-light border align-self-center">Padrão atual: <?= e(ucfirst($interfaceMode)) ?></span>
+      </div>
     </div>
   </div>
 
   <?php if (!$onboardingCompleted): ?>
-    <div class="card enter">
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div class="alert alert-warning border-0 rounded-4 shadow-sm">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
         <div>
-          <div class="tag">Primeiro acesso</div>
-          <h2 class="mb-1">Quer deixar tudo pronto em poucos passos?</h2>
-          <p class="muted mb-0">O onboarding ajuda a escolher o foco, criar áreas e cadastrar contas e gastos fixos iniciais.</p>
+          <div class="fw-semibold">Primeiro acesso</div>
+          <div class="text-body-secondary">Quer deixar tudo pronto em poucos passos?</div>
         </div>
-        <a class="btn btn-primary" href="<?= e(base_path('onboarding.php')) ?>">Começar onboarding</a>
+        <a class="btn btn-warning" href="<?= e(base_path('onboarding.php')) ?>">Começar onboarding</a>
       </div>
     </div>
   <?php endif; ?>
-    <div class="statbar">
-      <div class="stat"><span class="muted">Instâncias</span><strong><?= count($instances) ?></strong></div>
-      <div class="stat"><span class="muted">Convites pendentes</span><strong><?= count($auth->pendingInvitesForEmail($user['email'])) ?></strong></div>
-      <div class="stat"><span class="muted">Conta</span><strong><?= e($user['email']) ?></strong></div>
-    </div>
-  </div>
 
-  <div class="grid">
-    <div class="card enter">
-      <h2>Resumo rápido</h2>
-      <div class="statbar">
-        <div class="stat"><span class="muted">Entradas</span><strong>R$ <?= number_format($overall['income_received'] + $overall['income_planned'], 2, ',', '.') ?></strong></div>
-        <div class="stat"><span class="muted">Saídas</span><strong>R$ <?= number_format($overall['expense_paid'] + $overall['expense_planned'], 2, ',', '.') ?></strong></div>
-        <div class="stat"><span class="muted">Saldo projetado</span><strong>R$ <?= number_format($overall['projected'], 2, ',', '.') ?></strong></div>
-      </div>
-      <details style="margin-top:14px">
-        <summary class="tag" style="cursor:pointer">Ver detalhamento mensal</summary>
-        <div class="statbar" style="margin-top:14px">
-          <div class="stat"><span class="muted">Entradas recebidas</span><strong>R$ <?= number_format($overall['income_received'], 2, ',', '.') ?></strong></div>
-          <div class="stat"><span class="muted">Entradas previstas</span><strong>R$ <?= number_format($overall['income_planned'], 2, ',', '.') ?></strong></div>
-          <div class="stat"><span class="muted">Saídas pagas</span><strong>R$ <?= number_format($overall['expense_paid'], 2, ',', '.') ?></strong></div>
-          <div class="stat"><span class="muted">Saídas previstas</span><strong>R$ <?= number_format($overall['expense_planned'], 2, ',', '.') ?></strong></div>
-          <div class="stat"><span class="muted">Vencido</span><strong>R$ <?= number_format($overall['overdue_amount'], 2, ',', '.') ?></strong></div>
-          <div class="stat"><span class="muted">Faturas abertas</span><strong>R$ <?= number_format($overall['open_bills'], 2, ',', '.') ?></strong></div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-8">
+      <div class="card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body p-3 p-lg-4">
+          <h2 class="h4 fw-bold mb-3">Resumo rápido</h2>
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
+                <div class="card-body">
+                  <div class="text-body-secondary small">Entradas</div>
+                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['income_received'] + $overall['income_planned'], 2, ',', '.') ?></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
+                <div class="card-body">
+                  <div class="text-body-secondary small">Saídas</div>
+                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['expense_paid'] + $overall['expense_planned'], 2, ',', '.') ?></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
+                <div class="card-body">
+                  <div class="text-body-secondary small">Vencido</div>
+                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['overdue_amount'], 2, ',', '.') ?></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <details class="mt-3">
+            <summary class="fw-semibold">Ver detalhamento mensal</summary>
+            <div class="row g-2 mt-2">
+              <div class="col-12 col-md-4"><div class="card border-0 bg-body-tertiary rounded-4"><div class="card-body"><div class="text-body-secondary small">Entradas recebidas</div><div class="fw-semibold">R$ <?= number_format($overall['income_received'], 2, ',', '.') ?></div></div></div></div>
+              <div class="col-12 col-md-4"><div class="card border-0 bg-body-tertiary rounded-4"><div class="card-body"><div class="text-body-secondary small">Entradas previstas</div><div class="fw-semibold">R$ <?= number_format($overall['income_planned'], 2, ',', '.') ?></div></div></div></div>
+              <div class="col-12 col-md-4"><div class="card border-0 bg-body-tertiary rounded-4"><div class="card-body"><div class="text-body-secondary small">Saídas previstas</div><div class="fw-semibold">R$ <?= number_format($overall['expense_planned'], 2, ',', '.') ?></div></div></div></div>
+            </div>
+          </details>
         </div>
-      </details>
+      </div>
     </div>
 
-    <div class="card enter">
-      <h2>Suas instâncias</h2>
-      <div class="list stagger">
-        <?php foreach ($instanceSummaries as $instance): ?>
-          <div class="member">
-            <div class="meta">
-              <strong><?= e($instance['name']) ?></strong>
-              <span class="muted">Função: <?= e($instance['role']) ?> · Risco: <?= e($instance['risk']) ?></span>
-            </div>
-            <div class="actions">
-              <a class="btn btn-secondary" href="<?= e(base_path('instance.php?id=' . (int) $instance['id'])) ?>">Abrir</a>
-              <a class="btn btn-primary" href="<?= e(base_path('financial.php?instance_id=' . (int) $instance['id'])) ?>">Financeiro</a>
-            </div>
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body p-3 p-lg-4">
+          <h2 class="h4 fw-bold mb-3">Instâncias</h2>
+          <div class="list-group list-group-flush rounded-4 overflow-hidden">
+            <?php foreach ($instanceSummaries as $instance): ?>
+              <div class="list-group-item d-flex flex-column gap-2">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                  <div>
+                    <div class="fw-semibold"><?= e($instance['name']) ?></div>
+                    <div class="text-body-secondary small">Função: <?= e($instance['role']) ?> · Risco: <?= e($instance['risk']) ?></div>
+                  </div>
+                  <span class="badge text-bg-light border">R$ <?= number_format((float) $instance['projected'], 2, ',', '.') ?></span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                  <a class="btn btn-outline-secondary btn-sm" href="<?= e(base_path('instance.php?id=' . (int) $instance['id'])) ?>">Abrir</a>
+                  <a class="btn btn-primary btn-sm" href="<?= e(base_path('financial.php?instance_id=' . (int) $instance['id'])) ?>">Financeiro</a>
+                </div>
+              </div>
+            <?php endforeach; ?>
+            <?php if (!$instances): ?>
+              <div class="text-body-secondary">Você ainda não tem instâncias. Crie a primeira para começar.</div>
+            <?php endif; ?>
           </div>
-        <?php endforeach; ?>
-        <?php if (!$instances): ?>
-          <p class="muted">Você ainda não tem instâncias. Crie a primeira para começar.</p>
-        <?php endif; ?>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="card enter">
-    <h2>Convites pendentes</h2>
-    <?php $invites = $auth->pendingInvitesForEmail($user['email']); ?>
-    <?php if (!$invites): ?>
-      <p class="muted">Nenhum convite pendente.</p>
-    <?php else: ?>
-      <div class="list">
-        <?php foreach ($invites as $invite): ?>
-          <div class="member">
-            <div class="meta">
-              <strong><?= e($invite['instance_name']) ?></strong>
-              <span class="muted">Convite em aberto</span>
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-3 p-lg-4">
+      <h2 class="h4 fw-bold mb-3">Convites pendentes</h2>
+      <?php $invites = $auth->pendingInvitesForEmail($user['email']); ?>
+      <?php if (!$invites): ?>
+        <div class="text-body-secondary">Nenhum convite pendente.</div>
+      <?php else: ?>
+        <div class="list-group list-group-flush rounded-4 overflow-hidden">
+          <?php foreach ($invites as $invite): ?>
+            <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
+              <div>
+                <div class="fw-semibold"><?= e($invite['instance_name']) ?></div>
+                <div class="text-body-secondary small">Convite em aberto</div>
+              </div>
+              <a class="btn btn-success btn-sm" href="<?= e(base_path('accept-invite.php?token=' . $invite['token'])) ?>">Aceitar</a>
             </div>
-            <a class="btn btn-good" href="<?= e(base_path('accept-invite.php?token=' . $invite['token'])) ?>">Aceitar</a>
-          </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </div>
   </div>
+
   <?= $quickAddInstanceId ? quick_add_modal($quickAddInstanceId, $quickAddAccounts, $quickAddCenters, $quickAddCategories, $quickAddCards) : '' ?>
   <?php if ($quickAddInstanceId): ?>
     <a class="btn btn-primary floating-add d-md-none" href="<?= e(base_path('dashboard.php?add=1&quick_instance_id=' . $quickAddInstanceId)) ?>">+ Adicionar</a>
