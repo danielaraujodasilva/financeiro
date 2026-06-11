@@ -249,6 +249,9 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
     <?php endif; ?>
   </div>
   <?= $quickAddInstanceId ? quick_add_modal($quickAddInstanceId, $quickAddAccounts, $quickAddCenters, $quickAddCategories, $quickAddCards) : '' ?>
+  <?php if ($quickAddInstanceId): ?>
+    <a class="btn btn-primary floating-add d-md-none" href="<?= e(base_path('dashboard.php?add=1&quick_instance_id=' . $quickAddInstanceId)) ?>">+ Adicionar</a>
+  <?php endif; ?>
 </div>
 <?php if ($quickAddMode): ?>
 <script>

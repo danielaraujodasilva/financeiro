@@ -92,6 +92,14 @@ a{color:var(--accent);text-decoration:none}
 .btn-secondary{background:rgba(37,99,235,.08); color:var(--text); border:1px solid var(--line)}
 .btn-danger{background:rgba(225,29,72,.08); color:#9f1239; border:1px solid rgba(225,29,72,.18)}
 .btn-good{background:rgba(22,163,74,.08); color:#166534; border:1px solid rgba(22,163,74,.18)}
+.floating-add{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:20;
+  display:none;
+  box-shadow:0 16px 30px rgba(37,99,235,.25);
+}
 .tag{
   display:inline-flex; align-items:center; gap:6px;
   padding:6px 10px; border-radius:999px;
@@ -150,4 +158,5 @@ label{display:grid; gap:8px; margin:12px 0}
   .grid,.split{grid-template-columns:1fr}
   .statbar{grid-template-columns:1fr}
   .topbar{position:relative; top:0; flex-direction:column; align-items:flex-start}
+  .floating-add{display:inline-flex}
 }

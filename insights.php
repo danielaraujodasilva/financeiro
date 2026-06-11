@@ -1,7 +1,11 @@
 <?php
 require __DIR__ . '/bootstrap.php';
-$instanceId = (int)($_GET['instance_id'] ?? 0);
-if (!$instanceId) exit('Instância obrigatória.');
+
+$instanceId = (int) ($_GET['instance_id'] ?? 0);
+if (!$instanceId) {
+    exit('Instância obrigatória.');
+}
+
 $auth->requireInstanceAccess($instanceId);
 $instance = $auth->instanceById($instanceId);
 $today = date('Y-m-d');
@@ -9,32 +13,120 @@ $plus7 = date('Y-m-d', strtotime('+7 days'));
 $plus30 = date('Y-m-d', strtotime('+30 days'));
 $monthStart = date('Y-m-01');
 $monthEnd = date('Y-m-t');
-$tx = $financial->transactions($instanceId, 500);
-$insights = [];
-$overdue = 0; $next7 = 0; $next30 = 0; $expensePaid = 0; $incomePaid = 0; $monthCount = 0; $receivables = 0; $payables = 0;
-foreach ($tx as $t) {
-    if ($t['type'] === 'expense' && !in_array($t['status'], ['paid','canceled'], true) && !empty($t['due_date']) && $t['due_date'] < $today) $overdue += (float)$t['amount'];
-    if (!empty($t['due_date']) && $t['due_date'] >= $today && $t['due_date'] <= $plus7 && !in_array($t['status'], ['paid','canceled'], true)) $next7 += (float)$t['amount'];
-    if (!empty($t['due_date']) && $t['due_date'] >= $today && $t['due_date'] <= $plus30 && !in_array($t['status'], ['paid','canceled'], true)) $next30 += (float)$t['amount'];
-    if ($t['transaction_date'] >= $monthStart && $t['transaction_date'] <= $monthEnd) {
-        $monthCount++;
-        if ($t['type'] === 'expense' && $t['status'] === 'paid') $expensePaid += (float)$t['amount'];
-        if ($t['type'] === 'income' && $t['status'] === 'paid') $incomePaid += (float)$t['amount'];
-    }
-    if ($t['type'] === 'income' && !in_array($t['status'], ['paid','canceled'], true) && !empty($t['due_date']) && $t['due_date'] >= $today) $receivables += (float)$t['amount'];
-    if ($t['type'] === 'expense' && !in_array($t['status'], ['paid','canceled'], true) && !empty($t['due_date']) && $t['due_date'] >= $today) $payables += (float)$t['amount'];
-}
+$transactions = $financial->transactions($instanceId, 500);
 $accounts = $financial->accounts($instanceId);
-$currentBalance = array_sum(array_map(fn($a)=>(float)$a['current_balance'],$accounts));
-$reserve = 0;
-foreach ($accounts as $a) if ($a['type']==='investment') $reserve += (float)$a['current_balance'];
-$survivalMonths = $expensePaid > 0 ? max(0, floor(($currentBalance + $reserve) / max($expensePaid, 1))) : null;
-$monthDelta = $incomePaid - $expensePaid;
-if ($overdue > 0) $insights[] = "Você tem R$ " . number_format($overdue,2,',','.') . " vencidos.";
-if ($next7 > 0) $insights[] = "Há R$ " . number_format($next7,2,',','.') . " vencendo nos próximos 7 dias.";
-if ($next30 > 0) $insights[] = "Você tem R$ " . number_format($next30,2,',','.') . " comprometidos nos próximos 30 dias.";
-if ($receivables > $payables && $receivables > 0) $insights[] = "O total a receber supera o total a pagar no horizonte atual.";
-if ($monthDelta < 0) $insights[] = "O mês fechou negativo em R$ " . number_format(abs($monthDelta),2,',','.') . ".";
-if ($survivalMonths !== null) $insights[] = "Sua reserva + saldo cobrem cerca de " . $survivalMonths . " mês(es) no ritmo atual de despesas pagas.";
-if (!$insights) $insights[] = "Sem alertas críticos agora.";
-?><!doctype html><html lang="pt-br"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Insights</title><link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>"></head><body><div class="wrap"><?php financial_nav($instanceId,'insights'); ?><div class="card hero"><h1 class="headline">Insights automáticos</h1><p class="muted">Análises simples com base nos lançamentos e contas da instância.</p><div class="list"><?php foreach($insights as $i): ?><div class="member"><div class="meta"><strong><?= e($i) ?></strong><span class="muted">Análise automática</span></div></div><?php endforeach; ?></div></div></div></body></html>
+
+$currentBalance = array_sum(array_map(fn($a) => (float) $a['current_balance'], $accounts));
+$reserve = 0.0;
+foreach ($accounts as $account) {
+    if (($account['type'] ?? '') === 'investment') {
+        $reserve += (float) $account['current_balance'];
+    }
+}
+
+$insights = [];
+$overdue = 0.0;
+$due7 = 0.0;
+$due30 = 0.0;
+$incomePaid = 0.0;
+$expensePaid = 0.0;
+
+foreach ($transactions as $transaction) {
+    $status = (string) ($transaction['status'] ?? '');
+    $type = (string) ($transaction['type'] ?? '');
+    $amount = (float) ($transaction['amount'] ?? 0);
+    $date = (string) ($transaction['transaction_date'] ?? '');
+    $dueDate = (string) ($transaction['due_date'] ?? '');
+
+    if ($date >= $monthStart && $date <= $monthEnd) {
+        if ($type === 'income' && $status === 'paid') {
+            $incomePaid += $amount;
+        }
+        if ($type === 'expense' && $status === 'paid') {
+            $expensePaid += $amount;
+        }
+    }
+
+    if ($type === 'expense' && !in_array($status, ['paid', 'canceled'], true) && $dueDate !== '' && $dueDate < $today) {
+        $overdue += $amount;
+    }
+
+    if ($dueDate !== '' && $dueDate >= $today && $dueDate <= $plus7 && !in_array($status, ['paid', 'canceled'], true)) {
+        $due7 += $amount;
+    }
+
+    if ($dueDate !== '' && $dueDate >= $today && $dueDate <= $plus30 && !in_array($status, ['paid', 'canceled'], true)) {
+        $due30 += $amount;
+    }
+}
+
+$cardBills = $financial->bills($instanceId);
+$openCardCommitment = array_sum(array_map(fn($bill) => in_array($bill['status'], ['open', 'overdue'], true) ? (float) $bill['total_amount'] : 0.0, $cardBills));
+$projected = $currentBalance + $incomePaid - $expensePaid - $overdue - $openCardCommitment;
+$risk = 'baixo';
+if ($projected < 0 || $overdue > 0) {
+    $risk = 'alto';
+} elseif ($openCardCommitment > 0 || $due30 > 0) {
+    $risk = 'médio';
+}
+
+$insights[] = [
+    'title' => 'Você tem ' . format_money($overdue) . ' vencidos.',
+    'action' => ['Ver vencidos', base_path('transactions.php?instance_id=' . $instanceId . '&filter=overdue')],
+];
+$insights[] = [
+    'title' => 'Há ' . format_money($due7) . ' vencendo nos próximos 7 dias.',
+    'action' => ['Abrir fluxo', base_path('cashflow.php?instance_id=' . $instanceId)],
+];
+$insights[] = [
+    'title' => 'Seu cartão já comprometeu ' . format_money($openCardCommitment) . ' do mês.',
+    'action' => ['Ver cartões', base_path('cards.php?instance_id=' . $instanceId)],
+];
+$insights[] = [
+    'title' => 'Previsão até o fim do mês: ' . format_money($projected) . '.',
+    'action' => ['Abrir fluxo', base_path('cashflow.php?instance_id=' . $instanceId)],
+];
+$insights[] = [
+    'title' => 'Sua reserva cobre ' . ($expensePaid > 0 ? number_format(($currentBalance + $reserve) / max($expensePaid, 1), 1, ',', '.') : '0') . ' meses no ritmo atual.',
+    'action' => ['Criar meta', base_path('financial.php?instance_id=' . $instanceId)],
+];
+
+?>
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insights - <?= e($instance['name']) ?></title>
+<?= bootstrap_assets() ?>
+<link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
+</head>
+<body>
+<div class="wrap">
+  <?php financial_nav($instanceId, 'insights'); ?>
+  <div class="card hero">
+    <div class="tag">Insights</div>
+    <h1 class="headline">Alertas e ações rápidas</h1>
+    <p class="muted">Os principais sinais já aparecem aqui para você agir sem caçar informação em várias páginas.</p>
+  </div>
+
+  <div class="grid">
+    <?php foreach ($insights as $insight): ?>
+      <div class="card enter">
+        <h2 class="mb-2"><?= e($insight['title']) ?></h2>
+        <a class="btn btn-primary" href="<?= e($insight['action'][1]) ?>"><?= e($insight['action'][0]) ?></a>
+      </div>
+    <?php endforeach; ?>
+  </div>
+
+  <div class="card enter">
+    <h2 class="mb-1">Resumo técnico</h2>
+    <div class="statbar">
+      <div class="stat"><span class="muted">Saldo atual</span><strong><?= format_money($currentBalance) ?></strong></div>
+      <div class="stat"><span class="muted">Reserva</span><strong><?= format_money($reserve) ?></strong></div>
+      <div class="stat"><span class="muted">Risco</span><strong><?= risk_label($risk) ?></strong></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
