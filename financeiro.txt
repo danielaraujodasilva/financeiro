@@ -175,6 +175,12 @@ A página financial.php hoje concentra muita coisa: centros, categorias, contas,
 
 Transformar essa página em “Configurações” ou “Administração financeira”.
 
+Status atual do ajuste visual:
+
+* `instance.php` já foi padronizada em Bootstrap.
+* Telas principais como login, cadastro, dashboard, lançamentos, fluxo e insights já foram simplificadas.
+* `financial.php` também foi refeito em Bootstrap com cartões, accordion e layout responsivo, deixando a área administrativa mais organizada e menos “painel de avião”.
+
 Ela não deve ser chamada de “Base” no menu principal.
 
 Novo papel dela:
