@@ -323,9 +323,22 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
     </div>
   </div>
 
+  <div class="card enter">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h2 class="mb-1">Comece por aqui</h2>
+        <p class="muted mb-0">Abra só o que precisa. O restante continua disponível abaixo.</p>
+      </div>
+      <div class="actions">
+        <a class="btn btn-primary" href="<?= e(base_path('transactions.php?instance_id=' . $instanceId)) ?>">Novo lançamento</a>
+        <a class="btn btn-secondary" href="<?= e(base_path('cards.php?instance_id=' . $instanceId)) ?>">Cartões</a>
+      </div>
+    </div>
+  </div>
+
   <div class="grid">
     <div class="card enter">
-      <details open>
+      <details>
         <summary class="tag" style="cursor:pointer">Centros e categorias</summary>
         <div style="margin-top:14px">
       <form method="post" class="split">
@@ -354,7 +367,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
     </div>
 
     <div class="card enter">
-      <details open>
+      <details>
         <summary class="tag" style="cursor:pointer">Contas e lançamentos</summary>
         <div style="margin-top:14px">
       <form method="post" class="split">

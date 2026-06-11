@@ -278,9 +278,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </div>
 
+  <div class="card">
+    <h2 class="mb-1">Fluxo simples</h2>
+    <p class="muted mb-3">Se você só quer começar rápido, siga esta ordem: crie um provedor, crie uma conta externa e depois concilie.</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-primary" href="#provedores">1. Provedor</a>
+      <a class="btn btn-secondary" href="#contas">2. Conta</a>
+      <a class="btn btn-secondary" href="#conciliacao">3. Conciliação</a>
+    </div>
+  </div>
+
   <div class="grid">
     <div class="card enter" id="provedores">
-      <details open>
+      <details>
         <summary class="tag" style="cursor:pointer">Provedores</summary>
         <div style="margin-top:14px">
       <form method="post" class="split">
@@ -326,8 +336,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </details>
     </div>
 
-    <div class="card enter" id="contas">
-      <details open>
+  <div class="card enter" id="contas">
+      <details>
         <summary class="tag" style="cursor:pointer">Contas externas</summary>
         <div style="margin-top:14px">
       <form method="post" class="split">

@@ -327,7 +327,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
   </div>
 
   <div class="card" id="novo-cartao">
-    <details open>
+    <details>
       <summary class="tag" style="cursor:pointer">Novo cartão</summary>
       <div style="margin-top:14px">
     <form method="post" class="split">
@@ -401,7 +401,7 @@ $cardInstallments = $cardInstallmentsStmt->fetchAll();
     </div>
 
     <div class="card" id="compras">
-      <details open>
+      <details>
         <summary class="tag" style="cursor:pointer">Compras</summary>
         <div style="margin-top:14px">
       <form method="post" class="split">
