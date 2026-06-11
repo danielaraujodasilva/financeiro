@@ -62,12 +62,18 @@ final class CrmBridge
         }
 
         $config = $this->integrationConfig($instanceId);
-        if (($config['mode'] ?? 'auto-local') === 'api') {
+        $mode = (string) ($config['mode'] ?? 'auto-local');
+        $provider = 'crm-local';
+        if ($mode === 'api' || $mode === 'auto-local') {
             $rows = $this->fetchApiList($instanceId, $config, 'appointments');
-            if ($rows === null) {
+            if ($rows !== null) {
+                $provider = 'crm-api';
+            } elseif ($mode === 'api') {
                 return ['ok' => false, 'message' => 'API do CRM indisponível.', 'imported' => 0, 'updated' => 0];
             }
-        } else {
+        }
+
+        if (!isset($rows) || $rows === null) {
             $crm = $this->crm();
             if (!$crm) {
                 return ['ok' => false, 'message' => 'CRM local não configurado ou indisponível.', 'imported' => 0, 'updated' => 0];
@@ -123,17 +129,17 @@ final class CrmBridge
         $updated = 0;
 
         foreach ($rows as $row) {
-            $appointmentDate = (string) ($row['data_ultimo_contato'] ?? $row['created_at'] ?? date('Y-m-d'));
+            $appointmentDate = (string) ($row['appointment_date'] ?? $row['data_ultimo_contato'] ?? $row['created_at'] ?? date('Y-m-d'));
             $clientName = trim((string) ($row['client_name'] ?? ''));
             $serviceName = trim((string) ($row['service_name'] ?? 'CRM lead'));
             $expected = (float) ($row['expected_amount'] ?? 0);
-            $signal = max(0.0, min($expected, $expected * 0.3));
-            $remaining = max(0.0, $expected - $signal);
+            $signal = isset($row['signal_amount']) ? (float) $row['signal_amount'] : max(0.0, min($expected, $expected * 0.3));
+            $remaining = isset($row['remaining_amount']) ? (float) $row['remaining_amount'] : max(0.0, $expected - $signal);
             $status = $this->mapStatus((string) ($row['lead_status'] ?? '') . ' ' . (string) ($row['etapa_funil'] ?? ''));
-            $notes = trim('Lead CRM: ' . (string) ($row['client_phone'] ?? ''));
+            $notes = trim((string) ($row['notes'] ?? ('Lead CRM: ' . (string) ($row['client_phone'] ?? ''))));
             $externalId = (string) ($row['external_appointment_id'] ?? '');
 
-            $find->execute([$instanceId, 'crm-local', $externalId]);
+            $find->execute([$instanceId, $provider, $externalId]);
             $existingId = (int) $find->fetchColumn();
 
             if ($existingId > 0) {
@@ -146,7 +152,7 @@ final class CrmBridge
                     $remaining,
                     $status,
                     'crm',
-                    'crm-local',
+                    $provider,
                     $externalId,
                     null,
                     null,
@@ -168,7 +174,7 @@ final class CrmBridge
                 $remaining,
                 $status,
                 'crm',
-                'crm-local',
+                $provider,
                 $externalId,
                 null,
                 null,
