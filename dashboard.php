@@ -113,6 +113,26 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
 } elseif ($overall['open_bills'] > 0 || $overall['expense_planned'] > 0) {
     $overallRisk = 'médio';
 }
+$progressBase = max(1, $overall['current_balance'] + $overall['income_received'] + $overall['income_planned'] + $overall['expense_paid'] + $overall['expense_planned'] + $overall['open_bills'] + $overall['overdue_amount']);
+$progressCovered = (int) min(100, max(0, round((max(0, $progressBase - ($overall['expense_paid'] + $overall['expense_planned'] + $overall['open_bills'] + $overall['overdue_amount'])) / $progressBase) * 100)));
+$recommendations = [];
+if ($overall['overdue_amount'] > 0) {
+    $recommendations[] = ['title' => 'Registrar contas vencidas', 'meta' => 'Há valores em atraso para resolver agora.', 'tone' => 'danger'];
+}
+if ($overall['due_next7'] > 0) {
+    $recommendations[] = ['title' => 'Revisar vencimentos dos próximos 7 dias', 'meta' => 'Alguns compromissos estão chegando.', 'tone' => 'warning'];
+}
+if ($overall['projected'] >= 0) {
+    $recommendations[] = ['title' => 'Manter o ritmo atual', 'meta' => 'O mês está sob controle no momento.', 'tone' => 'success'];
+} else {
+    $recommendations[] = ['title' => 'Reduzir gastos não essenciais', 'meta' => 'A previsão até o fim do mês está negativa.', 'tone' => 'danger'];
+}
+if ($overall['open_bills'] > 0) {
+    $recommendations[] = ['title' => 'Acompanhar faturas abertas', 'meta' => 'Existe valor de cartão comprometido.', 'tone' => 'info'];
+}
+if (!$recommendations) {
+    $recommendations[] = ['title' => 'Nenhuma ação urgente', 'meta' => 'Continue acompanhando o resumo diário.', 'tone' => 'success'];
+}
 $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 ?>
 <!doctype html>
@@ -123,197 +143,450 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
 <title>Dashboard - Financeiro</title>
 <?= bootstrap_assets() ?>
 <link rel="stylesheet" href="<?= e(base_path('assets/ui.css')) ?>">
+<style>
+.dashboard-shell{display:grid; grid-template-columns:116px minmax(0,1fr); gap:18px}
+.dashboard-sidebar{
+  position:sticky; top:14px; align-self:start;
+  min-height:calc(100vh - 28px);
+  padding:18px 14px;
+  border-radius:28px;
+  border:1px solid rgba(15,23,42,.08);
+  background:rgba(255,255,255,.88);
+  box-shadow:0 18px 50px rgba(15,23,42,.08);
+  backdrop-filter:blur(18px);
+}
+.dashboard-brand{
+  width:48px; height:48px; border-radius:16px;
+  background:linear-gradient(135deg,#1d4ed8,#60a5fa);
+  box-shadow:0 18px 35px rgba(37,99,235,.24);
+}
+.dashboard-nav{display:grid; gap:8px; margin-top:26px}
+.dashboard-nav a{
+  display:flex; align-items:center; gap:10px;
+  padding:11px 10px; border-radius:16px;
+  color:#39475f; font-weight:700; font-size:.92rem;
+}
+.dashboard-nav a.active{background:rgba(37,99,235,.08); color:#1d4ed8}
+.dashboard-footer{display:grid; gap:12px; position:absolute; bottom:18px; left:14px; right:14px}
+.mini-icon{
+  width:42px; height:42px; border-radius:14px; display:grid; place-items:center;
+  background:rgba(37,99,235,.08); color:#1d4ed8; font-weight:800;
+}
+.metric-card{
+  border:1px solid rgba(15,23,42,.08);
+  border-radius:24px;
+  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(248,251,255,.92));
+  box-shadow:0 18px 45px rgba(15,23,42,.06);
+}
+.hero-card{
+  border:1px solid rgba(15,23,42,.08);
+  border-radius:28px;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(37,99,235,.12), transparent 24%),
+    radial-gradient(circle at 95% 5%, rgba(14,165,233,.12), transparent 18%),
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(243,247,253,.92));
+  box-shadow:0 18px 50px rgba(15,23,42,.08);
+}
+.health-ring{
+  width:260px; height:260px; border-radius:50%;
+  background:conic-gradient(#1d4ed8 <?= $progressCovered ?>%, #dbe4f1 0);
+  padding:20px;
+  margin:0 auto;
+}
+.health-ring-inner{
+  width:100%; height:100%; border-radius:50%;
+  background:linear-gradient(180deg,#f8fbff,#eef4fb);
+  display:grid; place-items:center;
+}
+.health-percent{font-size:clamp(3rem,6vw,4.7rem); line-height:1; font-weight:800; color:#1e3a8a}
+.health-sub{color:#4b5f7a; font-weight:600}
+.chart-wrap{
+  height:230px;
+  border-radius:24px;
+  background:linear-gradient(180deg, #f8fbff, #eef4fb);
+  border:1px solid rgba(15,23,42,.06);
+  position:relative;
+  overflow:hidden;
+}
+.chart-grid{
+  position:absolute; inset:18px 18px 38px 54px;
+  background-image:
+    linear-gradient(to top, rgba(148,163,184,.18) 1px, transparent 1px),
+    linear-gradient(to right, rgba(148,163,184,.14) 1px, transparent 1px);
+  background-size:100% 25%, 20% 100%;
+}
+.chart-line{
+  position:absolute; inset:18px 18px 38px 54px;
+}
+.action-item{
+  display:flex; align-items:center; gap:14px;
+  padding:16px; border-radius:18px;
+  border:1px solid rgba(15,23,42,.06);
+  background:#fff;
+}
+.action-arrow{color:#94a3b8; font-size:1.3rem}
+@media (max-width: 992px){
+  .dashboard-shell{grid-template-columns:1fr}
+  .dashboard-sidebar{position:relative; min-height:auto}
+  .dashboard-footer{position:static; margin-top:18px}
+}
+@media (max-width: 768px){
+  .health-ring{width:220px; height:220px}
+}
+</style>
 </head>
-<body class="bg-body-tertiary">
-<div class="container py-3 py-lg-4">
-  <div class="card shadow-sm border-0 rounded-4 mb-3">
-    <div class="card-body p-3 p-lg-4">
-      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+<body>
+<div class="container-fluid py-3 py-lg-4">
+  <div class="dashboard-shell">
+    <aside class="dashboard-sidebar d-none d-lg-block">
+      <div class="d-flex justify-content-center">
+        <div class="dashboard-brand"></div>
+      </div>
+      <nav class="dashboard-nav">
+        <a class="active" href="<?= e(base_path('dashboard.php')) ?>">Início</a>
+        <a href="<?= e(base_path('transactions.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Lançamentos</a>
+        <a href="<?= e(base_path('cards.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Cartões</a>
+        <a href="<?= e(base_path('financial.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Relatórios</a>
+        <a href="<?= e(base_path('dashboard.php?view=chooser')) ?>">Mais</a>
+      </nav>
+      <div class="dashboard-footer">
+        <a class="btn btn-primary w-100" href="<?= e(base_path('instance-create.php')) ?>">Nova instância</a>
+        <a class="btn btn-outline-secondary w-100" href="<?= e(base_path('logout.php')) ?>">Sair</a>
+      </div>
+    </aside>
+
+    <main class="min-vw-0">
+      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-3">
         <div>
-          <span class="badge rounded-pill text-bg-primary-subtle text-primary-emphasis mb-2">Financeiro · Multi-instância</span>
-          <h1 class="h2 fw-bold mb-1">Bem-vindo, <?= e($user['name']) ?></h1>
-          <div class="text-body-secondary">Seu centro de comando financeiro, sem complicação.</div>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge rounded-pill text-bg-light border">Financeiro</span>
+            <span class="badge rounded-pill text-bg-success-subtle text-success-emphasis">Saúde do mês</span>
+          </div>
+          <h1 class="display-6 fw-bold mb-1">Bom dia, <?= e($user['name']) ?>! 👋</h1>
+          <div class="text-body-secondary">Aqui está a saúde das suas finanças hoje.</div>
         </div>
         <div class="d-flex flex-wrap gap-2">
-          <a class="btn btn-outline-secondary" href="<?= e(base_path('logout.php')) ?>">Sair</a>
-          <a class="btn btn-primary" href="<?= e(base_path('instance-create.php')) ?>">Nova instância</a>
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button">Maio de 2025</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item active" href="#">Maio de 2025</a></li>
+              <li><a class="dropdown-item" href="#">Abril de 2025</a></li>
+              <li><a class="dropdown-item" href="#">Março de 2025</a></li>
+            </ul>
+          </div>
+          <button class="btn btn-outline-secondary" type="button">Filtros</button>
+          <a class="btn btn-primary" href="<?= e(base_path('dashboard.php?add=1&quick_instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">+ Adicionar</a>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div class="card shadow-sm border-0 rounded-4 mb-3">
-    <div class="card-body p-3 p-lg-4">
-      <div class="row g-3 align-items-start">
-        <div class="col-12 col-lg-6">
-          <span class="badge rounded-pill text-bg-light border mb-2">Modo básico primeiro</span>
-          <h2 class="h3 fw-bold mb-2">Resumo da sua vida financeira</h2>
-          <p class="text-body-secondary mb-0">O sistema mostra primeiro o essencial: saldo, risco, entradas e saídas.</p>
+      <?php if (!$onboardingCompleted): ?>
+        <div class="alert alert-warning border-0 rounded-4 shadow-sm mb-3">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <div>
+              <div class="fw-semibold">Primeiro acesso</div>
+              <div class="text-body-secondary">Quer deixar tudo pronto em poucos passos?</div>
+            </div>
+            <a class="btn btn-warning" href="<?= e(base_path('onboarding.php')) ?>">Começar onboarding</a>
+          </div>
         </div>
-        <div class="col-12 col-lg-6">
-          <div class="row g-2">
-            <div class="col-6 col-md-4">
-              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
-                <div class="card-body py-3 px-3">
-                  <div class="small text-body-secondary">Saldo atual</div>
-                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
+      <?php endif; ?>
+
+      <section class="hero-card p-3 p-lg-4 mb-3">
+        <div class="row g-4 align-items-center">
+          <div class="col-12 col-xl-5 text-center">
+            <div class="health-ring">
+              <div class="health-ring-inner px-3">
+                <div class="health-percent"><?= $progressCovered ?>%</div>
+                <div class="health-sub">do mês coberto</div>
+                <span class="badge text-bg-success-subtle text-success-emphasis mt-3">Você está no controle</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-xl-7">
+            <div class="mb-2">
+              <h2 class="h3 fw-bold mb-2">Você está indo muito bem!</h2>
+              <div class="text-body-secondary">Continue assim para fechar o mês tranquilo.</div>
+            </div>
+            <div class="row g-3 mt-1">
+              <div class="col-12 col-md-6">
+                <div class="metric-card p-3 h-100">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="mini-icon">R$</div>
+                    <div>
+                      <div class="text-body-secondary small">Saldo disponível</div>
+                      <div class="fs-5 fw-bold">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="metric-card p-3 h-100">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="mini-icon">!</div>
+                    <div>
+                      <div class="text-body-secondary small">Quanto falta para empatar o mês</div>
+                      <div class="fs-5 fw-bold">R$ <?= number_format(max(0, -$overall['projected']), 2, ',', '.') ?></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="metric-card p-3 h-100">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="mini-icon">↑</div>
+                    <div>
+                      <div class="text-body-secondary small">Previsão no fim do mês</div>
+                      <div class="fs-5 fw-bold">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="metric-card p-3 h-100">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="mini-icon">⏰</div>
+                    <div>
+                      <div class="text-body-secondary small">Contas vencendo em 7 dias</div>
+                      <div class="fs-5 fw-bold text-danger">R$ <?= number_format($overall['due_next7'], 2, ',', '.') ?></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="col-6 col-md-4">
-              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
-                <div class="card-body py-3 px-3">
-                  <div class="small text-body-secondary">Projetado</div>
-                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
-                </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 col-xxl-3">
+          <div class="metric-card p-3 h-100">
+            <div class="d-flex align-items-center gap-3">
+              <div class="mini-icon bg-success-subtle text-success">↓</div>
+              <div>
+                <div class="text-body-secondary small">Tenho hoje</div>
+                <div class="fs-3 fw-bold text-success">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
+                <div class="text-body-secondary">Saldo disponível</div>
               </div>
             </div>
-            <div class="col-6 col-md-4">
-              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
-                <div class="card-body py-3 px-3">
-                  <div class="small text-body-secondary">Risco</div>
-                  <div class="fs-5 fw-bold"><?= e(ucfirst($overallRisk)) ?></div>
-                </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-xxl-3">
+          <div class="metric-card p-3 h-100">
+            <div class="d-flex align-items-center gap-3">
+              <div class="mini-icon bg-primary-subtle text-primary">↗</div>
+              <div>
+                <div class="text-body-secondary small">Vou receber</div>
+                <div class="fs-3 fw-bold text-primary">R$ <?= number_format($overall['income_received'] + $overall['income_planned'], 2, ',', '.') ?></div>
+                <div class="text-body-secondary">Em entradas do mês</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-xxl-3">
+          <div class="metric-card p-3 h-100">
+            <div class="d-flex align-items-center gap-3">
+              <div class="mini-icon bg-warning-subtle text-warning">↓</div>
+              <div>
+                <div class="text-body-secondary small">Vou gastar</div>
+                <div class="fs-3 fw-bold text-warning">R$ <?= number_format($overall['expense_paid'] + $overall['expense_planned'] + $overall['open_bills'], 2, ',', '.') ?></div>
+                <div class="text-body-secondary">Gastos, contas e cartões</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-xxl-3">
+          <div class="metric-card p-3 h-100">
+            <div class="d-flex align-items-center gap-3">
+              <div class="mini-icon bg-purple-subtle text-purple" style="background:rgba(147,51,234,.09); color:#7c3aed;">=</div>
+              <div>
+                <div class="text-body-secondary small">Sobra prevista</div>
+                <div class="fs-3 fw-bold" style="color:#7c3aed;">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
+                <div class="text-body-secondary">No fim do mês</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="d-flex flex-wrap gap-2 mt-3">
-        <a class="btn btn-primary" href="<?= e(base_path('transactions.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Novo lançamento</a>
-        <a class="btn btn-outline-primary" href="<?= e(base_path('cards.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Cartões</a>
-        <a class="btn btn-outline-secondary" href="<?= e(base_path('financial.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Configurações</a>
-      </div>
-
-      <div class="d-flex flex-wrap gap-2 mt-3">
-        <form method="post" class="d-flex flex-wrap gap-2 align-items-center">
-          <input type="hidden" name="action" value="set_mode">
-          <button class="btn <?= $interfaceMode === 'simple' ? 'btn-primary' : 'btn-outline-primary' ?>" name="mode" value="simple" type="submit">Modo simples</button>
-          <button class="btn <?= $interfaceMode === 'advanced' ? 'btn-primary' : 'btn-outline-primary' ?>" name="mode" value="advanced" type="submit">Modo avançado</button>
-        </form>
-        <span class="badge rounded-pill text-bg-light border align-self-center">Padrão atual: <?= e(ucfirst($interfaceMode)) ?></span>
-      </div>
-    </div>
-  </div>
-
-  <?php if (!$onboardingCompleted): ?>
-    <div class="alert alert-warning border-0 rounded-4 shadow-sm">
-      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-        <div>
-          <div class="fw-semibold">Primeiro acesso</div>
-          <div class="text-body-secondary">Quer deixar tudo pronto em poucos passos?</div>
-        </div>
-        <a class="btn btn-warning" href="<?= e(base_path('onboarding.php')) ?>">Começar onboarding</a>
-      </div>
-    </div>
-  <?php endif; ?>
-
-  <div class="row g-3 mb-3">
-    <div class="col-12 col-lg-8">
-      <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-body p-3 p-lg-4">
-          <h2 class="h4 fw-bold mb-3">Resumo rápido</h2>
-          <div class="row g-2">
-            <div class="col-12 col-md-4">
-              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
-                <div class="card-body">
-                  <div class="text-body-secondary small">Entradas</div>
-                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['income_received'] + $overall['income_planned'], 2, ',', '.') ?></div>
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-xl-7">
+          <div class="metric-card p-3 p-lg-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h2 class="h4 fw-bold mb-1">Entradas x Saídas do mês</h2>
+                <div class="text-body-secondary small">Resumo visual do comportamento do mês</div>
+              </div>
+              <span class="badge rounded-pill text-bg-light border">Resultado: R$ <?= number_format($overall['projected'], 2, ',', '.') ?></span>
+            </div>
+            <div class="row g-3 align-items-center">
+              <div class="col-12 col-md-4">
+                <div class="d-grid gap-3">
+                  <div>
+                    <div class="small text-body-secondary">Entradas</div>
+                    <div class="fw-bold fs-5 text-success">R$ <?= number_format($overall['income_received'] + $overall['income_planned'], 2, ',', '.') ?></div>
+                  </div>
+                  <div>
+                    <div class="small text-body-secondary">Saídas</div>
+                    <div class="fw-bold fs-5 text-primary">R$ <?= number_format($overall['expense_paid'] + $overall['expense_planned'], 2, ',', '.') ?></div>
+                  </div>
+                  <div class="metric-card p-3" style="box-shadow:none;">
+                    <div class="small text-body-secondary">Resultado</div>
+                    <div class="fw-bold fs-5 text-success">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
-                <div class="card-body">
-                  <div class="text-body-secondary small">Saídas</div>
-                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['expense_paid'] + $overall['expense_planned'], 2, ',', '.') ?></div>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="card border-0 bg-body-tertiary rounded-4 h-100">
-                <div class="card-body">
-                  <div class="text-body-secondary small">Vencido</div>
-                  <div class="fs-5 fw-bold">R$ <?= number_format($overall['overdue_amount'], 2, ',', '.') ?></div>
+              <div class="col-12 col-md-8">
+                <div class="chart-wrap">
+                  <div class="chart-grid"></div>
+                  <svg class="chart-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                    <path d="M0,92 C10,90 14,78 20,68 C28,55 36,50 44,42 C54,33 61,29 70,24 C80,18 88,17 100,12" fill="none" stroke="#16a34a" stroke-width="2.8" stroke-linecap="round"/>
+                    <path d="M0,94 C10,93 14,86 20,80 C28,73 35,66 44,61 C54,55 62,51 70,47 C80,43 89,39 100,34" fill="none" stroke="#2563eb" stroke-width="2.8" stroke-linecap="round"/>
+                  </svg>
                 </div>
               </div>
             </div>
           </div>
-          <details class="mt-3">
-            <summary class="fw-semibold">Ver detalhamento mensal</summary>
-            <div class="row g-2 mt-2">
-              <div class="col-12 col-md-4"><div class="card border-0 bg-body-tertiary rounded-4"><div class="card-body"><div class="text-body-secondary small">Entradas recebidas</div><div class="fw-semibold">R$ <?= number_format($overall['income_received'], 2, ',', '.') ?></div></div></div></div>
-              <div class="col-12 col-md-4"><div class="card border-0 bg-body-tertiary rounded-4"><div class="card-body"><div class="text-body-secondary small">Entradas previstas</div><div class="fw-semibold">R$ <?= number_format($overall['income_planned'], 2, ',', '.') ?></div></div></div></div>
-              <div class="col-12 col-md-4"><div class="card border-0 bg-body-tertiary rounded-4"><div class="card-body"><div class="text-body-secondary small">Saídas previstas</div><div class="fw-semibold">R$ <?= number_format($overall['expense_planned'], 2, ',', '.') ?></div></div></div></div>
+        </div>
+
+        <div class="col-12 col-xl-5">
+          <div class="metric-card p-3 p-lg-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h2 class="h4 fw-bold mb-1">O que fazer agora</h2>
+                <div class="text-body-secondary small">Próximas ações sugeridas</div>
+              </div>
+              <span class="badge rounded-pill text-bg-light border"><?= e(ucfirst($overallRisk)) ?></span>
             </div>
-          </details>
+            <div class="d-grid gap-2">
+              <?php foreach ($recommendations as $recommendation): ?>
+                <div class="action-item">
+                  <div class="mini-icon" style="<?= $recommendation['tone'] === 'danger' ? 'background:rgba(225,29,72,.09);color:#be123c;' : ($recommendation['tone'] === 'warning' ? 'background:rgba(245,158,11,.09);color:#d97706;' : ($recommendation['tone'] === 'success' ? 'background:rgba(22,163,74,.09);color:#16a34a;' : 'background:rgba(37,99,235,.09);color:#2563eb;')) ?>">•</div>
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold"><?= e($recommendation['title']) ?></div>
+                    <div class="text-body-secondary small"><?= e($recommendation['meta']) ?></div>
+                  </div>
+                  <div class="action-arrow">›</div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="col-12 col-lg-4">
-      <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-body p-3 p-lg-4">
-          <h2 class="h4 fw-bold mb-3">Instâncias</h2>
-          <div class="list-group list-group-flush rounded-4 overflow-hidden">
-            <?php foreach ($instanceSummaries as $instance): ?>
-              <div class="list-group-item d-flex flex-column gap-2">
-                <div class="d-flex justify-content-between align-items-start gap-3">
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-lg-6">
+          <div class="metric-card p-3 p-lg-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h4 fw-bold mb-0">Cartões</h2>
+              <a href="<?= e(base_path('cards.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))) ?>">Ver cartões</a>
+            </div>
+            <div class="d-grid gap-3">
+              <?php foreach (array_slice($instanceSummaries, 0, 1) as $instance): ?>
+                <div class="metric-card p-3">
+                  <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                      <div class="fw-semibold"><?= e($instance['name']) ?></div>
+                      <div class="text-body-secondary small">Comprometimento futuro</div>
+                    </div>
+                    <span class="badge text-bg-light border">R$ <?= number_format((float) $instance['open_bills'], 2, ',', '.') ?></span>
+                  </div>
+                  <div class="progress mt-3" style="height:8px;">
+                    <div class="progress-bar" style="width: <?= min(100, max(0, (int) round(($overall['open_bills'] / max(1, $overall['current_balance'] ?: 1)) * 100))) ?>%"></div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+              <?php if (!$instances): ?><div class="text-body-secondary">Nenhuma instância disponível.</div><?php endif; ?>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="metric-card p-3 p-lg-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h4 fw-bold mb-0">Recursos avançados</h2>
+              <span class="badge rounded-pill text-bg-light border">Ocultos para simplificar</span>
+            </div>
+            <div class="row g-2">
+              <?php
+              $advancedLinks = [
+                ['label' => 'Fluxo de caixa', 'href' => base_path('cashflow.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+                ['label' => 'Orçamentos', 'href' => base_path('budgets.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+                ['label' => 'Metas', 'href' => base_path('goals.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+                ['label' => 'Planejamento', 'href' => base_path('calendar.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+                ['label' => 'Importar dados', 'href' => base_path('open-finance.php?instance_id=' . (int) ($instances[0]['id'] ?? 0))],
+              ];
+              foreach ($advancedLinks as $link):
+              ?>
+                <div class="col-6 col-xl-4">
+                  <a class="metric-card p-3 text-center d-block h-100" href="<?= e($link['href']) ?>">
+                    <div class="mini-icon mx-auto mb-2">+</div>
+                    <div class="fw-semibold"><?= e($link['label']) ?></div>
+                  </a>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-lg-4">
+          <div class="metric-card p-3 p-lg-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h5 fw-bold mb-0">Instâncias</h2>
+              <span class="badge rounded-pill text-bg-light border"><?= count($instances) ?></span>
+            </div>
+            <div class="list-group list-group-flush rounded-4 overflow-hidden">
+              <?php foreach ($instanceSummaries as $instance): ?>
+                <div class="list-group-item d-flex justify-content-between align-items-center">
                   <div>
                     <div class="fw-semibold"><?= e($instance['name']) ?></div>
-                    <div class="text-body-secondary small">Função: <?= e($instance['role']) ?> · Risco: <?= e($instance['risk']) ?></div>
+                    <div class="text-body-secondary small">Risco: <?= e($instance['risk']) ?></div>
                   </div>
-                  <span class="badge text-bg-light border">R$ <?= number_format((float) $instance['projected'], 2, ',', '.') ?></span>
+                  <a class="btn btn-sm btn-outline-primary" href="<?= e(base_path('instance.php?id=' . (int) $instance['id'])) ?>">Abrir</a>
                 </div>
-                <div class="d-flex flex-wrap gap-2">
-                  <a class="btn btn-outline-secondary btn-sm" href="<?= e(base_path('instance.php?id=' . (int) $instance['id'])) ?>">Abrir</a>
-                  <a class="btn btn-primary btn-sm" href="<?= e(base_path('financial.php?instance_id=' . (int) $instance['id'])) ?>">Financeiro</a>
-                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-8">
+          <div class="metric-card p-3 p-lg-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h5 fw-bold mb-0">Convites pendentes</h2>
+              <span class="badge rounded-pill text-bg-light border">Acessos compartilhados</span>
+            </div>
+            <?php $invites = $auth->pendingInvitesForEmail($user['email']); ?>
+            <?php if (!$invites): ?>
+              <div class="text-body-secondary">Nenhum convite pendente.</div>
+            <?php else: ?>
+              <div class="list-group list-group-flush rounded-4 overflow-hidden">
+                <?php foreach ($invites as $invite): ?>
+                  <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                    <div>
+                      <div class="fw-semibold"><?= e($invite['instance_name']) ?></div>
+                      <div class="text-body-secondary small">Convite em aberto</div>
+                    </div>
+                    <a class="btn btn-success btn-sm" href="<?= e(base_path('accept-invite.php?token=' . $invite['token'])) ?>">Aceitar</a>
+                  </div>
+                <?php endforeach; ?>
               </div>
-            <?php endforeach; ?>
-            <?php if (!$instances): ?>
-              <div class="text-body-secondary">Você ainda não tem instâncias. Crie a primeira para começar.</div>
             <?php endif; ?>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div class="card shadow-sm border-0 rounded-4">
-    <div class="card-body p-3 p-lg-4">
-      <h2 class="h4 fw-bold mb-3">Convites pendentes</h2>
-      <?php $invites = $auth->pendingInvitesForEmail($user['email']); ?>
-      <?php if (!$invites): ?>
-        <div class="text-body-secondary">Nenhum convite pendente.</div>
-      <?php else: ?>
-        <div class="list-group list-group-flush rounded-4 overflow-hidden">
-          <?php foreach ($invites as $invite): ?>
-            <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
-              <div>
-                <div class="fw-semibold"><?= e($invite['instance_name']) ?></div>
-                <div class="text-body-secondary small">Convite em aberto</div>
-              </div>
-              <a class="btn btn-success btn-sm" href="<?= e(base_path('accept-invite.php?token=' . $invite['token'])) ?>">Aceitar</a>
-            </div>
-          <?php endforeach; ?>
+      <?= $quickAddInstanceId ? quick_add_modal($quickAddInstanceId, $quickAddAccounts, $quickAddCenters, $quickAddCategories, $quickAddCards) : '' ?>
+      <?php if ($quickAddInstanceId): ?>
+        <a class="btn btn-primary floating-add d-md-none" href="<?= e(base_path('dashboard.php?add=1&quick_instance_id=' . $quickAddInstanceId)) ?>">+ Adicionar</a>
+        <div class="bottom-nav nav-mobile">
+          <a class="bottom-nav-item active" href="<?= e(base_path('dashboard.php')) ?>">Início</a>
+          <a class="bottom-nav-item" href="<?= e(base_path('dashboard.php?add=1&quick_instance_id=' . $quickAddInstanceId)) ?>">Adicionar</a>
+          <a class="bottom-nav-item" href="<?= e(base_path('transactions.php?instance_id=' . $quickAddInstanceId)) ?>">Lançamentos</a>
+          <a class="bottom-nav-item" href="<?= e(base_path('cards.php?instance_id=' . $quickAddInstanceId)) ?>">Cartões</a>
+          <a class="bottom-nav-item" href="<?= e(base_path('financial.php?instance_id=' . $quickAddInstanceId)) ?>">Mais</a>
         </div>
       <?php endif; ?>
-    </div>
+    </main>
   </div>
-
-  <?= $quickAddInstanceId ? quick_add_modal($quickAddInstanceId, $quickAddAccounts, $quickAddCenters, $quickAddCategories, $quickAddCards) : '' ?>
-  <?php if ($quickAddInstanceId): ?>
-    <a class="btn btn-primary floating-add d-md-none" href="<?= e(base_path('dashboard.php?add=1&quick_instance_id=' . $quickAddInstanceId)) ?>">+ Adicionar</a>
-    <div class="bottom-nav nav-mobile">
-      <a class="bottom-nav-item active" href="<?= e(base_path('dashboard.php')) ?>">Início</a>
-      <a class="bottom-nav-item" href="<?= e(base_path('dashboard.php?add=1&quick_instance_id=' . $quickAddInstanceId)) ?>">Adicionar</a>
-      <a class="bottom-nav-item" href="<?= e(base_path('transactions.php?instance_id=' . $quickAddInstanceId)) ?>">Lançamentos</a>
-      <a class="bottom-nav-item" href="<?= e(base_path('cards.php?instance_id=' . $quickAddInstanceId)) ?>">Cartões</a>
-      <a class="bottom-nav-item" href="<?= e(base_path('financial.php?instance_id=' . $quickAddInstanceId)) ?>">Mais</a>
-    </div>
-  <?php endif; ?>
 </div>
 <?php if ($quickAddMode): ?>
 <script>
