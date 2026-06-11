@@ -145,6 +145,18 @@ $monthIncome = $overall['income_received'] + $overall['income_planned'];
 $monthExpense = $overall['expense_paid'] + $overall['expense_planned'] + $overall['open_bills'];
 $monthNet = $monthIncome - $monthExpense;
 $monthBreakEvenGap = max(0.0, $monthExpense - $monthIncome);
+$pendingSignalStmt = $pdo->prepare('
+    SELECT COALESCE(SUM(CASE WHEN COALESCE(signal_amount, 0) <= 0 THEN COALESCE(expected_amount, 0) ELSE 0 END), 0)
+    FROM financial_service_appointments
+    WHERE instance_id IN (' . implode(',', array_fill(0, max(1, count($instances)), '?')) . ')
+      AND appointment_date BETWEEN ? AND ?
+      AND status NOT IN ("canceled", "cancelado", "perdido")
+');
+$pendingSignalParams = $instances ? array_map(fn($i) => (int) $i['id'], $instances) : [0];
+$pendingSignalParams[] = $monthStart;
+$pendingSignalParams[] = $monthEnd;
+$pendingSignalStmt->execute($pendingSignalParams);
+$monthAppointmentsWithoutSignal = (float) $pendingSignalStmt->fetchColumn();
 $overallRisk = 'baixo';
 if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
     $overallRisk = 'alto';
@@ -432,15 +444,16 @@ $selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . su
         </div>
         <div class="col-12 col-md-6 col-xxl-3">
           <div class="metric-card p-3 h-100" style="min-height:140px;">
-            <div class="d-flex align-items-center gap-3">
-              <div class="mini-icon bg-primary-subtle text-primary">↗</div>
-              <div>
+                <div class="d-flex align-items-center gap-3">
+                  <div class="mini-icon bg-primary-subtle text-primary">↗</div>
+                  <div>
                 <div class="text-body-secondary small" style="font-size:.92rem;">Vou receber</div>
                 <div class="fw-bold text-primary" style="font-size:1.65rem; line-height:1.1;">R$ <?= number_format($monthIncome, 2, ',', '.') ?></div>
                 <div class="text-body-secondary" style="font-size:.95rem;">Em entradas do mês</div>
+                <div class="text-body-secondary small mt-1" style="font-size:.82rem;">Ou R$ <?= number_format($monthIncome + $monthAppointmentsWithoutSignal, 2, ',', '.') ?> considerando agendamentos sem sinal pago</div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
         </div>
         <div class="col-12 col-md-6 col-xxl-3">
           <div class="metric-card p-3 h-100" style="min-height:140px;">
