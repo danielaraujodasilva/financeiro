@@ -141,6 +141,10 @@ foreach ($instanceSummaries as $summary) {
     }
 }
 $overall['projected'] = $overall['current_balance'] + $overall['income_received'] + $overall['income_planned'] - $overall['expense_paid'] - $overall['expense_planned'] - $overall['overdue_amount'] - $overall['open_bills'];
+$monthIncome = $overall['income_received'] + $overall['income_planned'];
+$monthExpense = $overall['expense_paid'] + $overall['expense_planned'] + $overall['open_bills'];
+$monthNet = $monthIncome - $monthExpense;
+$monthBreakEvenGap = max(0.0, $monthExpense - $monthIncome);
 $overallRisk = 'baixo';
 if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
     $overallRisk = 'alto';
@@ -369,7 +373,7 @@ $selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . su
                   <div class="d-flex align-items-center gap-3">
                     <div class="mini-icon">R$</div>
                     <div>
-                    <div class="text-body-secondary small" style="font-size:.92rem;">Saldo disponível</div>
+                <div class="text-body-secondary small" style="font-size:.92rem;">Balanço geral</div>
                       <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
                     </div>
                   </div>
@@ -381,7 +385,7 @@ $selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . su
                     <div class="mini-icon">!</div>
                     <div>
                     <div class="text-body-secondary small" style="font-size:.92rem;">Quanto falta para empatar o mês</div>
-                      <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format(max(0, -$overall['projected']), 2, ',', '.') ?></div>
+                      <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format($monthBreakEvenGap, 2, ',', '.') ?></div>
                     </div>
                   </div>
                 </div>
@@ -392,7 +396,7 @@ $selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . su
                     <div class="mini-icon">↑</div>
                     <div>
                       <div class="text-body-secondary small" style="font-size:.92rem;">Previsão no fim do mês</div>
-                      <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
+                      <div class="fw-bold" style="font-size:1.15rem;">R$ <?= number_format($monthNet, 2, ',', '.') ?></div>
                     </div>
                   </div>
                 </div>
@@ -421,7 +425,7 @@ $selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . su
               <div>
                 <div class="text-body-secondary small" style="font-size:.92rem;">Tenho hoje</div>
                 <div class="fw-bold text-success" style="font-size:1.65rem; line-height:1.1;">R$ <?= number_format($overall['current_balance'], 2, ',', '.') ?></div>
-                <div class="text-body-secondary" style="font-size:.95rem;">Saldo disponível</div>
+                <div class="text-body-secondary" style="font-size:.95rem;">Balanço geral</div>
               </div>
             </div>
           </div>
@@ -432,7 +436,7 @@ $selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . su
               <div class="mini-icon bg-primary-subtle text-primary">↗</div>
               <div>
                 <div class="text-body-secondary small" style="font-size:.92rem;">Vou receber</div>
-                <div class="fw-bold text-primary" style="font-size:1.65rem; line-height:1.1;">R$ <?= number_format($overall['income_received'] + $overall['income_planned'], 2, ',', '.') ?></div>
+                <div class="fw-bold text-primary" style="font-size:1.65rem; line-height:1.1;">R$ <?= number_format($monthIncome, 2, ',', '.') ?></div>
                 <div class="text-body-secondary" style="font-size:.95rem;">Em entradas do mês</div>
               </div>
             </div>
@@ -444,7 +448,7 @@ $selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . su
               <div class="mini-icon bg-warning-subtle text-warning">↓</div>
               <div>
                 <div class="text-body-secondary small" style="font-size:.92rem;">Vou gastar</div>
-                <div class="fw-bold text-warning" style="font-size:1.65rem; line-height:1.1;">R$ <?= number_format($overall['expense_paid'] + $overall['expense_planned'] + $overall['open_bills'], 2, ',', '.') ?></div>
+                <div class="fw-bold text-warning" style="font-size:1.65rem; line-height:1.1;">R$ <?= number_format($monthExpense, 2, ',', '.') ?></div>
                 <div class="text-body-secondary" style="font-size:.95rem;">Gastos, contas e cartões</div>
               </div>
             </div>
@@ -456,7 +460,7 @@ $selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . su
               <div class="mini-icon bg-purple-subtle text-purple" style="background:rgba(147,51,234,.09); color:#7c3aed;">=</div>
               <div>
                 <div class="text-body-secondary small" style="font-size:.92rem;">Sobra prevista</div>
-                <div class="fw-bold" style="font-size:1.65rem; line-height:1.1; color:#7c3aed;">R$ <?= number_format($overall['projected'], 2, ',', '.') ?></div>
+                <div class="fw-bold" style="font-size:1.65rem; line-height:1.1; color:#7c3aed;">R$ <?= number_format($monthNet, 2, ',', '.') ?></div>
                 <div class="text-body-secondary" style="font-size:.95rem;">No fim do mês</div>
               </div>
             </div>
@@ -472,7 +476,7 @@ $selectedMonthLabel = $monthLabelMap[substr($selectedMonth, 5, 2)] . ' de ' . su
                 <h2 class="fw-bold mb-1" style="font-size:1.2rem;">Entradas x Saídas do mês</h2>
                 <div class="text-body-secondary small" style="font-size:.93rem;">Resumo visual do comportamento de <?= e($selectedMonthLabel) ?></div>
               </div>
-              <span class="badge rounded-pill text-bg-light border">Resultado: R$ <?= number_format($overall['projected'], 2, ',', '.') ?></span>
+              <span class="badge rounded-pill text-bg-light border">Resultado geral: R$ <?= number_format($overall['projected'], 2, ',', '.') ?></span>
             </div>
             <?php
               $daysInMonth = max(1, (int) date('t', strtotime($monthStart)));
