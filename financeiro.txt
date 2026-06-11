@@ -547,3 +547,4 @@ Progresso da simplificação
 - [x] Insights principais levados para página própria com ação rápida.
 - [x] Implementar preferência simple/advanced por usuário.
 - [x] Onboarding inicial com assistente simples.
+- [x] Refinar mobile com bottom navigation e atalhos principais.

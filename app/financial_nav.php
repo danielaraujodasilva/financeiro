@@ -32,7 +32,7 @@ function financial_nav(int $instanceId, string $current = ''): void
         'audit' => ['Auditoria', base_path('audit.php?instance_id=' . $instanceId)],
     ];
     $mode = interface_mode();
-    echo '<div class="card enter mb-3"><div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">';
+    echo '<div class="card enter mb-3 nav-desktop"><div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">';
     echo '<ul class="nav nav-pills flex-wrap gap-2">';
     foreach ($core as $key => [$label, $href]) {
         $active = $key === $current ? ' active' : '';
@@ -43,12 +43,24 @@ function financial_nav(int $instanceId, string $current = ''): void
     echo '<button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">' . ($mode === 'simple' ? 'Mais' : 'Ferramentas avançadas') . '</button>';
     echo '<ul class="dropdown-menu dropdown-menu-end p-2" style="min-width:320px;max-height:70vh;overflow:auto">';
     foreach ($advanced as $key => [$label, $href]) {
-        if ($mode === 'simple' && in_array($key, ['finance','recurring','centers','categories','accounts','budgets','goals','calendar','dre','simulator','smart_rules','appointments','services','marketing','crm','openfinance','audit'], true)) {
-            // keep advanced menu available but grouped under the dropdown
-        }
         $active = $key === $current ? ' active' : '';
         echo '<li><a class="dropdown-item rounded ' . trim($active) . '" href="' . e($href) . '">' . e($label) . '</a></li>';
     }
     echo '</ul>';
     echo '</div></div></div>';
+
+    $mobileItems = [
+        'dashboard' => ['Início', base_path('dashboard.php')],
+        'add' => ['Adicionar', base_path('dashboard.php?add=1')],
+        'transactions' => ['Lançamentos', base_path('transactions.php?instance_id=' . $instanceId)],
+        'cards' => ['Cartões', base_path('cards.php?instance_id=' . $instanceId)],
+        'more' => ['Mais', base_path('financial.php?instance_id=' . $instanceId)],
+    ];
+
+    echo '<div class="bottom-nav nav-mobile">';
+    foreach ($mobileItems as $key => [$label, $href]) {
+        $active = $key === $current ? ' active' : '';
+        echo '<a class="bottom-nav-item' . $active . '" href="' . e($href) . '">' . e($label) . '</a>';
+    }
+    echo '</div>';
 }

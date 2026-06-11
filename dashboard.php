@@ -265,6 +265,13 @@ $onboardingCompleted = (int) ($user['onboarding_completed'] ?? 0) === 1;
   <?= $quickAddInstanceId ? quick_add_modal($quickAddInstanceId, $quickAddAccounts, $quickAddCenters, $quickAddCategories, $quickAddCards) : '' ?>
   <?php if ($quickAddInstanceId): ?>
     <a class="btn btn-primary floating-add d-md-none" href="<?= e(base_path('dashboard.php?add=1&quick_instance_id=' . $quickAddInstanceId)) ?>">+ Adicionar</a>
+    <div class="bottom-nav nav-mobile">
+      <a class="bottom-nav-item active" href="<?= e(base_path('dashboard.php')) ?>">Início</a>
+      <a class="bottom-nav-item" href="<?= e(base_path('dashboard.php?add=1&quick_instance_id=' . $quickAddInstanceId)) ?>">Adicionar</a>
+      <a class="bottom-nav-item" href="<?= e(base_path('transactions.php?instance_id=' . $quickAddInstanceId)) ?>">Lançamentos</a>
+      <a class="bottom-nav-item" href="<?= e(base_path('cards.php?instance_id=' . $quickAddInstanceId)) ?>">Cartões</a>
+      <a class="bottom-nav-item" href="<?= e(base_path('financial.php?instance_id=' . $quickAddInstanceId)) ?>">Mais</a>
+    </div>
   <?php endif; ?>
 </div>
 <?php if ($quickAddMode): ?>
