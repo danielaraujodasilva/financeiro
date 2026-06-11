@@ -4,22 +4,23 @@ declare(strict_types=1);
 function financial_nav(int $instanceId, string $current = ''): void
 {
     $core = [
-        'dashboard' => ['Dashboard', base_path('dashboard.php')],
-        'finance' => ['Base', base_path('financial.php?instance_id=' . $instanceId)],
+        'dashboard' => ['Início', base_path('dashboard.php')],
+        'add' => ['Adicionar', base_path('dashboard.php?add=1')],
         'transactions' => ['Lançamentos', base_path('transactions.php?instance_id=' . $instanceId)],
         'cards' => ['Cartões', base_path('cards.php?instance_id=' . $instanceId)],
-        'cashflow' => ['Fluxo', base_path('cashflow.php?instance_id=' . $instanceId)],
-        'insights' => ['Insights', base_path('insights.php?instance_id=' . $instanceId)],
+        'reports' => ['Relatórios', base_path('reports.php?instance_id=' . $instanceId)],
     ];
     $advanced = [
+        'finance' => ['Configurações', base_path('financial.php?instance_id=' . $instanceId)],
+        'cashflow' => ['Fluxo de caixa', base_path('cashflow.php?instance_id=' . $instanceId)],
+        'insights' => ['Insights', base_path('insights.php?instance_id=' . $instanceId)],
         'recurring' => ['Recorrências', base_path('recurring.php?instance_id=' . $instanceId)],
-        'centers' => ['Centros', base_path('centers.php?instance_id=' . $instanceId)],
-        'categories' => ['Categorias', base_path('categories.php?instance_id=' . $instanceId)],
+        'centers' => ['Áreas', base_path('centers.php?instance_id=' . $instanceId)],
+        'categories' => ['Tipos de gasto', base_path('categories.php?instance_id=' . $instanceId)],
         'accounts' => ['Contas', base_path('accounts.php?instance_id=' . $instanceId)],
         'budgets' => ['Orçamentos', base_path('budgets.php?instance_id=' . $instanceId)],
         'goals' => ['Metas', base_path('goals.php?instance_id=' . $instanceId)],
         'calendar' => ['Calendário', base_path('calendar.php?instance_id=' . $instanceId)],
-        'reports' => ['Relatórios', base_path('reports.php?instance_id=' . $instanceId)],
         'dre' => ['DRE', base_path('dre.php?instance_id=' . $instanceId)],
         'simulator' => ['Simulador', base_path('simulator.php?instance_id=' . $instanceId)],
         'smart_rules' => ['Regras Smart', base_path('smart-rules.php?instance_id=' . $instanceId)],
@@ -30,6 +31,7 @@ function financial_nav(int $instanceId, string $current = ''): void
         'openfinance' => ['Open Finance', base_path('open-finance.php?instance_id=' . $instanceId)],
         'audit' => ['Auditoria', base_path('audit.php?instance_id=' . $instanceId)],
     ];
+    $mode = interface_mode();
     echo '<div class="card enter mb-3"><div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">';
     echo '<ul class="nav nav-pills flex-wrap gap-2">';
     foreach ($core as $key => [$label, $href]) {
@@ -38,7 +40,7 @@ function financial_nav(int $instanceId, string $current = ''): void
     }
     echo '</ul>';
     echo '<div class="dropdown">';
-    echo '<button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Ferramentas avançadas</button>';
+    echo '<button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">' . ($mode === 'simple' ? 'Mais' : 'Ferramentas avançadas') . '</button>';
     echo '<ul class="dropdown-menu dropdown-menu-end p-2" style="min-width:320px;max-height:70vh;overflow:auto">';
     foreach ($advanced as $key => [$label, $href]) {
         $active = $key === $current ? ' active' : '';

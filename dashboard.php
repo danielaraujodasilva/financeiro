@@ -85,6 +85,13 @@ foreach ($instances as $inst) {
     $instanceSummaries[] = array_merge($inst, finance_instance_summary($pdo, (int) $inst['id'], $monthStart, $monthEnd, $today, $plus7));
 }
 
+$quickAddInstanceId = (int) ($_GET['quick_instance_id'] ?? ($instances[0]['id'] ?? 0));
+$quickAddMode = (string) ($_GET['add'] ?? '') === '1';
+$quickAddCenters = $quickAddInstanceId ? $financial->centers($quickAddInstanceId) : [];
+$quickAddCategories = $quickAddInstanceId ? $financial->categories($quickAddInstanceId) : [];
+$quickAddAccounts = $quickAddInstanceId ? $financial->accounts($quickAddInstanceId) : [];
+$quickAddCards = $quickAddInstanceId ? $financial->cards($quickAddInstanceId) : [];
+
 $overall = [
     'current_balance' => 0,
     'income_received' => 0,
@@ -226,6 +233,17 @@ if ($overall['projected'] < 0 || $overall['overdue_amount'] > 0) {
       </div>
     <?php endif; ?>
   </div>
+  <?= $quickAddInstanceId ? quick_add_modal($quickAddInstanceId, $quickAddAccounts, $quickAddCenters, $quickAddCategories, $quickAddCards) : '' ?>
 </div>
+<?php if ($quickAddMode): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var modal = document.getElementById('quickAddModal');
+  if (modal && window.bootstrap) {
+    new bootstrap.Modal(modal).show();
+  }
+});
+</script>
+<?php endif; ?>
 </body>
 </html>

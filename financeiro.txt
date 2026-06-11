@@ -1,105 +1,546 @@
-Financeiro - acompanhamento do projeto
+Codex, o sistema já tem bastante funcionalidade, mas ficou complexo demais visualmente. Quero simplificar a experiência sem remover nada.
 
-Última atualização: 2026-06-10
+A ideia é transformar o sistema em algo que uma pessoa comum consiga usar no dia a dia: abrir, entender a saúde financeira, adicionar um gasto/entrada/compra no cartão rapidamente e sair.
 
-Objetivo
-- Construir um sistema financeiro completo para uso pessoal e do estúdio, com estrutura preparada para evolução futura.
-- Começar pelo MVP manual, bem organizado e fácil de manter.
-- Deixar a arquitetura pronta para Open Finance no futuro, sem implementar agora.
+Os recursos avançados continuam existindo, mas devem ficar em camadas, dentro de “Mais”, “Configurações” ou modo avançado.
 
-Status atual
-- Login, cadastro e sessão funcionando.
-- Instâncias por usuário funcionando.
-- Conta conjunta via membros e convites funcionando.
-- Interface base com visual moderno e responsivo funcionando.
-- Correção de URLs para operar em /financeiro concluída.
-- Fase 1 do banco de dados concluída.
-- Fase 2 do cartão de crédito concluída.
-- Fase 3 concluída com dashboard e telas principais.
-- Fase 4 concluída com insights, simulador e regras smart.
-- Fase 5 concluída com integração opcional de CRM/estúdio.
+Prioridade absoluta: menos bagunça visual, menos formulário gigante, menos termo técnico e mais fluxo simples.
 
-O que já existe
-- Autenticação básica.
-- Dashboard inicial.
-- Criação de instância.
-- Gestão de membros.
-- Convite por token.
-- Aceite de convite.
-- Tema visual compartilhado.
-- Webhook de sincronização com GitHub.
+Preciso simplificar profundamente a usabilidade do sistema financeiro sem remover funcionalidades.
 
-Fase 1 - Banco de dados base
-- [x] Criar ou revisar todas as tabelas financeiras base.
-- [x] Inserir centros financeiros iniciais.
-- [x] Inserir categorias iniciais.
-- [x] Inserir subcategorias financeiras detalhadas.
-- [x] Criar contas financeiras.
-- [x] Criar lançamentos financeiros.
-- [x] Criar recorrências.
-- [x] Criar orçamentos.
-- [x] Criar metas.
-- [x] Criar regras automáticas.
+Contexto:
+O sistema já tem várias páginas e recursos importantes: Dashboard, Lançamentos, Cartões, Fluxo, Insights, Recorrências, Centros, Categorias, Contas, Orçamentos, Metas, Calendário, Relatórios, DRE, Simulador, Regras Smart, Agenda/Receita, Marketing, CRM opcional, Open Finance e Auditoria.
 
-Fase 2 - Cartão de crédito
-- [x] Criar tabelas de cartões.
-- [x] Criar compras e parcelas.
-- [x] Criar faturas.
-- [x] Calcular comprometimento futuro.
-- [x] Consolidar visão de limite usado e disponível.
-- [x] Consolidar projeção das próximas faturas.
-- [x] Melhorar edição/remoção de cartões e compras.
+O problema:
+A estrutura funcional está boa, mas a experiência do usuário ficou complexa, espalhada e pesada. Parece sistema feito para administrador financeiro, não para uma pessoa comum que só quer entender a saúde financeira e cadastrar uma compra, uma conta ou uma entrada rapidamente.
 
-Fase 3 - Telas principais
-- [x] Dashboard financeiro completo.
-- [x] Tela de lançamentos.
-- [x] Tela de recorrências.
-- [x] Tela de centros.
-- [x] Tela de categorias.
-- [x] Tela de contas.
-- [x] Tela de cartões.
-- [x] Tela de orçamentos.
-- [x] Tela de metas.
-- [x] Tela de fluxo de caixa.
-- [x] Tela de calendário financeiro.
-- [x] Relatórios.
-- [x] DRE simples do estúdio.
+Objetivo:
+Transformar a interface em algo simples, direto e intuitivo, sem perder nenhuma funcionalidade existente.
 
-Fase 4 - Recursos inteligentes
-- [x] Tela de insights.
-- [x] Simulador de decisão.
-- [x] Regras automáticas de categorização.
-- [x] Melhorar precisão das análises.
-- [x] Tornar o simulador mais sofisticado com impacto por prazo.
+A regra principal é:
+Funcionalidade avançada continua existindo, mas não deve ficar esfregada na cara do usuário o tempo todo.
 
-Fase 5 - Integração com CRM/estúdio
-- [x] Receita prevista por agendamento.
-- [x] Sinal e restante por sessão.
-- [x] Relatórios de serviços.
-- [x] Relatórios de marketing.
-- [x] Vínculo automático opcional com CRM externo.
-- [x] Importação automática opcional de agenda real do CRM local.
-- [x] Importação automática opcional de leads reais do CRM.
+Quero aplicar o conceito de “progressive disclosure”:
 
-Fase 6 - Preparação para Open Finance futura
-- [x] Tabelas de provedores.
-- [x] Contas externas.
-- [x] Transações importadas.
-- [x] Tela de conciliação.
+* mostrar primeiro o essencial;
+* esconder o avançado em camadas;
+* permitir que o usuário comum use o sistema sem entender contabilidade;
+* deixar recursos avançados acessíveis para quem quiser aprofundar.
 
-Fase 7 - Segurança
-- [x] Regras de permissão por usuário e instância.
-- [x] Proteção de dados sensíveis.
-- [x] Logging seguro.
-- [x] Preparar trilha de auditoria nas alterações importantes.
+PRIORIDADE 1: Criar uma experiência principal simples
 
-Prioridade imediata
-1. Melhorar edição/remoção nas telas.
-2. Refinar relatórios.
-3. Evoluir integrações reais de Open Finance quando houver provedor.
+A tela inicial do sistema financeiro deve responder rapidamente:
 
-Notas
-- Não implementar Open Finance agora.
-- Não construir tudo de uma vez.
-- Avançar por blocos pequenos e funcionais.
-- Manter compatibilidade com a base atual do sistema.
+1. Quanto tenho agora?
+2. Quanto entra este mês?
+3. Quanto sai este mês?
+4. Quanto ainda falta pagar?
+5. Tem algo vencido?
+6. Quanto posso gastar sem comprometer o mês?
+7. Como está minha saúde financeira?
+8. Qual é a próxima ação recomendada?
+
+Criar no Dashboard uma área principal chamada algo como:
+
+“Resumo da sua vida financeira”
+
+Com cards simples:
+
+* Saldo atual
+* Entradas do mês
+* Saídas do mês
+* A pagar
+* Vencido
+* Projetado no fim do mês
+* Risco financeiro: baixo, médio ou alto
+* Próxima ação recomendada
+
+Evitar termos técnicos demais.
+
+Exemplo:
+Em vez de “Saldo projetado”, usar “Previsão até o fim do mês”.
+Em vez de “DRE”, manter como avançado.
+Em vez de “Centro financeiro”, na interface comum usar “Área” ou “Onde isso entra?”.
+Em vez de “Categoria”, usar “Tipo de gasto/entrada”.
+
+PRIORIDADE 2: Criar botão principal “Adicionar”
+
+O usuário comum não deve ter que escolher entre 20 páginas.
+
+Criar um botão grande e sempre visível:
+
+“+ Adicionar”
+
+Ao clicar, abrir um modal com opções simples:
+
+* Gasto
+* Entrada
+* Compra no cartão
+* Conta fixa
+* Transferência
+
+Cada opção abre um formulário enxuto.
+
+Formulário rápido de Gasto:
+
+* Valor
+* Descrição
+* Data
+* Área
+* Categoria
+* Forma de pagamento
+
+Campos avançados ficam recolhidos em “Mais opções”:
+
+* vencimento
+* pagamento
+* status
+* conta
+* observações
+* vínculo com cliente/agenda
+* origem
+* campos técnicos
+
+Formulário rápido de Entrada:
+
+* Valor
+* Descrição
+* Data
+* Área
+* Categoria
+* Recebido ou previsto
+
+Formulário rápido de Compra no cartão:
+
+* Cartão
+* Valor
+* Descrição
+* Data
+* Parcelas
+* Área
+* Categoria
+
+Formulário rápido de Conta fixa:
+
+* Nome
+* Valor
+* Dia de vencimento
+* Frequência
+* Área
+* Categoria
+
+A ideia:
+O usuário consegue lançar algo em menos de 30 segundos.
+
+PRIORIDADE 3: Redesenhar a navegação
+
+Manter as funcionalidades, mas reorganizar o menu.
+
+Menu principal visível:
+
+1. Início
+2. Adicionar
+3. Lançamentos
+4. Cartões
+5. Relatórios
+6. Mais
+
+Dentro de “Mais” colocar:
+
+* Fluxo de caixa
+* Insights
+* Contas fixas
+* Metas
+* Orçamentos
+* Calendário
+* Centros/Áreas
+* Categorias
+* Contas
+* DRE do Estúdio
+* Simulador
+* Regras Smart
+* Agenda/Receita
+* Marketing
+* CRM
+* Open Finance
+* Auditoria
+* Configurações
+
+Importante:
+A tela não deve parecer um painel de avião logo de cara. O usuário básico precisa ver pouca coisa, mas o usuário avançado precisa conseguir acessar tudo.
+
+PRIORIDADE 4: Remover a página “Base” como centro principal
+
+A página financial.php hoje concentra muita coisa: centros, categorias, contas, lançamentos, recorrências, metas, orçamentos e outras áreas. Isso ficou pesado.
+
+Transformar essa página em “Configurações” ou “Administração financeira”.
+
+Ela não deve ser chamada de “Base” no menu principal.
+
+Novo papel dela:
+
+* área administrativa;
+* configuração inicial;
+* acesso avançado;
+* manutenção do sistema.
+
+Não usar essa tela como página operacional do dia a dia.
+
+PRIORIDADE 5: Melhorar a página de Lançamentos
+
+A página de lançamentos deve ser mais parecida com um extrato simples.
+
+Topo:
+
+* botão “+ Adicionar”
+* filtros rápidos:
+
+  * Todos
+  * Entradas
+  * Gastos
+  * Cartão
+  * Vencidos
+  * Este mês
+
+Lista:
+Cada lançamento deve mostrar:
+
+* descrição
+* valor
+* data
+* status
+* área
+* categoria
+
+Ações rápidas:
+
+* marcar como pago
+* editar
+* duplicar
+* excluir/cancelar
+
+O formulário completo de criação não deve ficar ocupando metade da tela sempre aberto.
+Usar modal ou painel lateral.
+
+PRIORIDADE 6: Melhorar Cartões
+
+A página de cartões deve responder:
+
+1. Quanto está aberto na fatura?
+2. Quanto já está comprometido nos próximos meses?
+3. Qual cartão está mais pesado?
+4. Qual é o vencimento mais próximo?
+
+Tela de cartões:
+
+Cards por cartão:
+
+* nome
+* limite
+* usado
+* disponível
+* fatura atual
+* vencimento
+* parcelas futuras
+
+Botões:
+
+* adicionar compra
+* ver fatura
+* ver parcelas futuras
+
+Compra parcelada deve ser simples:
+
+* descrição
+* valor total
+* parcelas
+* cartão
+* categoria
+* área
+
+O sistema gera as parcelas automaticamente.
+
+PRIORIDADE 7: Melhorar Fluxo de Caixa
+
+A tela de fluxo não deve ser apenas uma lista de lançamentos.
+
+Criar visão por períodos:
+
+* próximos 7 dias
+* próximos 30 dias
+* próximos 60 dias
+* próximos 90 dias
+
+Para cada período mostrar:
+
+* entradas previstas
+* saídas previstas
+* saldo projetado
+* alertas
+
+Também criar lista por dia:
+
+* hoje
+* amanhã
+* próximos dias
+
+Exemplo:
+Hoje:
+
+* Pagar internet: R$ 120
+* Receber sessão: R$ 699
+
+PRIORIDADE 8: Trazer Insights para o Dashboard
+
+A página Insights pode continuar existindo, mas os principais alertas precisam aparecer no Dashboard.
+
+Exemplos de cards:
+
+* “Você tem R$ X vencidos.”
+* “Há R$ X vencendo nos próximos 7 dias.”
+* “Seu cartão já comprometeu R$ X do mês que vem.”
+* “Sua previsão até o fim do mês está negativa.”
+* “Sua reserva cobre X meses.”
+
+Cada insight deve ter botão de ação:
+
+* “Ver vencidos”
+* “Abrir fluxo”
+* “Ver cartões”
+* “Criar meta”
+
+PRIORIDADE 9: Criar modo “Simples” e “Avançado”
+
+Criar uma configuração por usuário:
+
+interface_mode:
+
+* simple
+* advanced
+
+Modo simples:
+
+* mostra somente Início, Adicionar, Lançamentos, Cartões, Relatórios e Mais;
+* esconde termos técnicos;
+* formulários enxutos;
+* configurações avançadas recolhidas.
+
+Modo avançado:
+
+* mostra mais atalhos;
+* permite acesso direto a DRE, Simulador, Regras, Open Finance, Auditoria etc.
+
+O padrão para novos usuários deve ser simple.
+
+PRIORIDADE 10: Melhorar linguagem
+
+Trocar textos técnicos por linguagem mais humana.
+
+Sugestões:
+
+* income -> Entrada
+* expense -> Gasto
+* transfer -> Transferência
+* planned -> Previsto
+* pending -> Pendente
+* paid -> Pago
+* overdue -> Vencido
+* canceled -> Cancelado
+* center -> Área
+* category -> Categoria
+* account -> Conta
+* recurring -> Conta fixa
+* cashflow -> Próximos vencimentos
+* budget -> Limite mensal
+* goal -> Meta
+* DRE -> Resultado do Estúdio
+
+Importante:
+Internamente pode manter os nomes técnicos no banco.
+Na interface, mostrar labels amigáveis.
+
+PRIORIDADE 11: Onboarding inicial
+
+Quando o usuário entra pela primeira vez, criar um assistente simples:
+
+Etapa 1:
+“Você quer controlar o quê?”
+
+* Minha vida pessoal
+* Meu negócio
+* Os dois
+
+Etapa 2:
+“Crie suas áreas principais”
+Sugestões:
+
+* Casa/Família
+* Estúdio
+* Pessoal
+* Reserva
+* Dívidas
+
+Etapa 3:
+“Cadastre suas contas”
+
+* Dinheiro
+* Banco
+* Cartão
+* Investimento
+
+Etapa 4:
+“Cadastre seus gastos fixos”
+
+* aluguel
+* internet
+* energia
+* cartão
+* anúncios
+* terapia
+* etc.
+
+Etapa 5:
+Levar para o Dashboard.
+
+PRIORIDADE 12: Preservar tudo que já existe
+
+Não remover:
+
+* centros;
+* categorias;
+* contas;
+* lançamentos;
+* recorrências;
+* cartões;
+* parcelas;
+* faturas;
+* orçamentos;
+* metas;
+* fluxo de caixa;
+* calendário;
+* relatórios;
+* DRE;
+* simulador;
+* regras smart;
+* agenda/receita;
+* marketing;
+* CRM opcional;
+* Open Finance preparado;
+* auditoria.
+
+A mudança é de experiência e organização, não de corte de funcionalidades.
+
+PRIORIDADE 13: Implementação técnica sugerida
+
+Criar componentes reutilizáveis:
+
+* app/components/layout.php
+* app/components/nav.php
+* app/components/quick_add_modal.php
+* app/components/financial_cards.php
+* app/components/transaction_list.php
+* app/components/filters.php
+* app/components/status_badge.php
+* app/components/money.php
+
+Criar helpers de label:
+
+* financial_type_label($type)
+* financial_status_label($status)
+* financial_account_type_label($type)
+* financial_center_label($center)
+* format_money($value)
+* risk_label($risk)
+
+Criar CSS para:
+
+* cards principais;
+* botão flutuante “Adicionar”;
+* modal;
+* badges de status;
+* modo simples;
+* modo avançado;
+* responsivo mobile.
+
+PRIORIDADE 14: Mobile first
+
+A maioria dos lançamentos provavelmente será feita no celular.
+
+Então:
+
+* botão “+ Adicionar” precisa ficar fácil no mobile;
+* formulários devem ser curtos;
+* campos devem ter boa altura;
+* lista de lançamentos precisa ser legível;
+* menu avançado não pode ocupar a tela toda de forma confusa;
+* usar bottom navigation no mobile, se possível.
+
+Menu mobile sugerido:
+
+* Início
+* Adicionar
+* Lançamentos
+* Cartões
+* Mais
+
+PRIORIDADE 15: Plano de execução
+
+Executar em fases.
+
+FASE 1:
+
+* Reorganizar navegação.
+* Renomear labels técnicos para labels amigáveis.
+* Criar botão “+ Adicionar”.
+* Criar modal de lançamento rápido.
+* Tirar o formulário grande da página de lançamentos.
+
+FASE 2:
+
+* Redesenhar Dashboard.
+* Trazer principais insights para o Dashboard.
+* Criar cards de saúde financeira.
+* Criar próximos vencimentos.
+
+FASE 3:
+
+* Redesenhar Cartões.
+* Melhorar faturas e parcelas.
+* Criar visual de limite usado e comprometimento futuro.
+
+FASE 4:
+
+* Transformar financial.php em Configurações.
+* Dividir configurações em blocos mais limpos.
+* Criar onboarding inicial.
+
+FASE 5:
+
+* Criar modo simples/avançado.
+* Salvar preferência por usuário.
+* Ajustar menus conforme o modo.
+
+FASE 6:
+
+* Refinar mobile.
+* Melhorar responsividade.
+* Ajustar cores, espaçamentos e hierarquia visual.
+
+Resultado esperado:
+O sistema deve parecer simples para o usuário comum, mas poderoso para quem quiser se aprofundar.
+
+A experiência ideal:
+O usuário entra, entende rapidamente se está bem ou ferrado, cadastra uma compra em poucos segundos e consegue ver o que precisa fazer agora.
+
+Nada de painel confuso cheio de recurso gritando ao mesmo tempo.
+Funcionalidade avançada deve existir em camadas.
+
+Progresso da simplificação
+- [x] Navegação reorganizada em modo simples/avançado.
+- [x] Labels mais humanas na interface.
+- [x] Botão "+ Adicionar" com modal rápido no dashboard.
+- [x] Lançamentos viraram lista simples com filtros.
+- [ ] Remover/transformar a página "Configurações" em centro de manutenção mais limpo.
+- [ ] Melhorar ainda mais Cartões e Open Finance em fluxo visual.
+- [ ] Criar botão flutuante de adicionar no mobile.
+- [ ] Implementar preferência simple/advanced por usuário.
